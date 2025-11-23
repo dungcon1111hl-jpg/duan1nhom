@@ -1,215 +1,258 @@
 <?php require_once PATH_ROOT . '/views/header.php'; ?>
+<?php
+    // Xử lý dữ liệu mặc định tránh lỗi
+    $list_anh = $list_anh ?? [];
+    $list_lich_trinh = $list_lich_trinh ?? [];
+    $tour = $tour ?? [];
+    $hdv = $hdv ?? null; // Biến chứa thông tin HDV đã được Controller fetch
+?>
 
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Chi tiết Tour</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="index.php?act=admin">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="index.php?controller=tour&action=index">Danh sách Tour</a></li>
-        <li class="breadcrumb-item active"><?= htmlspecialchars($tour['ma_tour']) ?></li>
-    </ol>
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary fw-bold mb-0">
-            <i class="fas fa-route me-2"></i> 
-            <?= htmlspecialchars($tour['ten_tour']) ?>
-        </h2>
-        <a href="<?= BASE_URL ?>?act=tours" class="btn btn-outline-secondary shadow-sm">
-            <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
-        </a>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h4 class="card-title text-success fw-bold mb-3">
-                        <i class="fas fa-info-circle me-2"></i> Thông tin chung
-                    </h4>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <p class="mb-2">
-                                <strong><i class="fas fa-barcode text-muted me-1"></i> Mã tour:</strong><br>
-                                <span class="badge bg-light text-dark fs-6"><?= htmlspecialchars($tour['ma_tour']) ?></span>
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="mb-2">
-                                <strong><i class="fas fa-coins text-warning me-1"></i> Giá tour:</strong><br>
-                                <span class="fs-5 fw-bold text-success">
-                                    <?= number_format($tour['gia_tour']) ?> đ
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <hr class="my-3">
-
-                    <p class="mb-3">
-                        <strong><i class="fas fa-align-left text-info me-1"></i> Mô tả ngắn:</strong><br>
-                        <span class="text-muted"><?= nl2br(htmlspecialchars($tour['mo_ta_ngan'] ?? 'Chưa có mô tả')) ?></span>
-                    </p>
-
-                    <p class="mb-3">
-                        <strong><i class="fas fa-map-marked-alt text-primary me-1"></i> Hành trình:</strong><br>
-                        <span class="fs-6">
-                            <span class="badge bg-primary">
-                                <?= htmlspecialchars($tour['dia_diem_bat_dau']) ?>
-                            </span>
-                            <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                            <span class="badge bg-success">
-                                <?= htmlspecialchars($tour['dia_diem_ket_thuc']) ?>
-                            </span>
-                        </span>
-                    </p>
-
-                    <p class="mb-4">
-                        <strong><i class="far fa-calendar-alt text-danger me-1"></i> Thời gian:</strong><br>
-                        <span class="badge bg-light text-dark">
-                            <?= date('d/m/Y', strtotime($tour['ngay_khoi_hanh'])) ?>
-                        </span>
-                        <span class="text-muted mx-1">→</span>
-                        <span class="badge bg-light text-dark">
-                            <?= date('d/m/Y', strtotime($tour['ngay_ket_thuc'])) ?>
-                        </span>
-                    </p>
-
-                    <h5 class="mt-4 text-success fw-bold">
-                        <i class="fas fa-file-alt me-2"></i> Mô tả chi tiết
-                    </h5>
-                    <div class="bg-light p-3 rounded">
-                        <?= nl2br(htmlspecialchars($tour['mo_ta_chi_tiet'] ?? 'Chưa có thông tin chi tiết.')) ?>
-                    </div>
-
-                    <h5 class="mt-4 text-danger fw-bold">
-                        <i class="fas fa-shield-alt me-2"></i> Chính sách hủy/đổi/hoàn
-                    </h5>
-                    <div class="bg-danger-subtle p-3 rounded text-danger-emphasis">
-                        <?= nl2br(htmlspecialchars($tour['chinh_sach'] ?? 'Chưa có chính sách.')) ?>
-                    </div>
-                </div>
-            </div>
+<main>
+    <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+            <h2 class="fw-bold text-info"><i class="fas fa-info-circle me-2"></i>Chi tiết Tour</h2>
+            <a href="index.php?act=tours" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
+            </a>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <h4 class="card-title text-info fw-bold mb-3">
-                        <i class="fas fa-ticket-alt me-2"></i> Tình trạng vé
-                    </h4>
-
-                    <?php
-                    $total = (int)$tour['so_luong_ve'];
-                    $remain = (int)$tour['so_ve_con_lai'];
-                    $percent = $total > 0 ? ($remain / $total) * 100 : 0;
-                    $statusColor = match($tour['trang_thai']) {
-                        'CON_VE' => 'success',
-                        'HET_VE' => 'danger',
-                        'HUY' => 'secondary',
-                        'DA_KHOI_HANH' => 'info',
-                        'DA_KET_THUC' => 'dark',
-                        default => 'light'
-                    };
-                    $statusLabel = match($tour['trang_thai']) {
-                        'CON_VE' => 'Còn vé',
-                        'HET_VE' => 'Hết vé',
-                        'HUY' => 'Đã hủy',
-                        'DA_KHOI_HANH' => 'Đã khởi hành',
-                        'DA_KET_THUC' => 'Đã kết thúc',
-                        default => $tour['trang_thai']
-                    };
-                    ?>
-
-                    <div class="text-center mb-3">
-                        <span class="badge bg-<?= $statusColor ?> fs-6 px-3 py-2">
-                            <i class="fas fa-circle me-1"></i> <?= $statusLabel ?>
-                        </span>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white fw-bold py-3">
+                        <i class="fas fa-file-alt me-2"></i> Thông tin chung
                     </div>
+                    <div class="card-body">
+                        <h3 class="fw-bold text-dark mb-3"><?= htmlspecialchars($tour['ten_tour'] ?? 'Chưa có tên') ?></h3>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Mã tour</small>
+                                <span class="fs-5 text-primary fw-bold"><?= $tour['ma_tour'] ?? '---' ?></span>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Loại Tour</small>
+                                <?php
+                                    $types = ['TRONG_NUOC' => 'Trong nước', 'QUOC_TE' => 'Quốc tế', 'THEO_YEU_CAU' => 'Theo yêu cầu'];
+                                    echo "<span class='badge bg-info text-dark'>" . ($types[$tour['loai_tour'] ?? ''] ?? 'Khác') . "</span>";
+                                ?>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Phân loại</small>
+                                <strong><?= $tour['loai_tour_nang_cao'] ?? 'Trọn gói' ?></strong>
+                            </div>
+                        </div>
 
-                    <p class="mb-2 text-center">
-                        <strong class="fs-4 text-primary"><?= $remain ?></strong>
-                        <small class="text-muted"> / <?= $total ?> vé</small>
-                    </p>
+                        <div class="row mb-4 p-3 bg-light rounded mx-1">
+                            <div class="col-md-4">
+                                <small class="text-muted d-block"><i class="fas fa-plane-departure me-1"></i> Điểm đi</small>
+                                <strong><?= $tour['dia_diem_bat_dau'] ?></strong>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block"><i class="fas fa-exchange-alt me-1"></i> Trung chuyển</small>
+                                <strong><?= $tour['diem_trung_chuyen'] ?? '-' ?></strong>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block"><i class="fas fa-map-marker-alt me-1"></i> Điểm đến</small>
+                                <strong><?= $tour['dia_diem_ket_thuc'] ?></strong>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-primary"><i class="fas fa-align-left me-2"></i>Mô tả ngắn</h6>
+                            <p class="text-secondary fst-italic border-start border-3 ps-3 border-primary">
+                                <?= nl2br(htmlspecialchars($tour['mo_ta_ngan'] ?? 'Chưa có mô tả')) ?>
+                            </p>
+                        </div>
 
-                    <div class="progress mb-3" style="height: 12px;">
-                        <div class="progress-bar bg-<?= $percent > 50 ? 'success' : ($percent > 20 ? 'warning' : 'danger') ?>"
-                             role="progressbar"
-                             style="width: <?= $percent ?>%"
-                             aria-valuenow="<?= $remain ?>" aria-valuemin="0" aria-valuemax="<?= $total ?>">
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-primary"><i class="fas fa-list me-2"></i>Chi tiết chương trình</h6>
+                            <div class="p-3 border rounded bg-white" style="max-height: 300px; overflow-y: auto;">
+                                <?= nl2br(htmlspecialchars($tour['mo_ta_chi_tiet'] ?? '')) ?>
+                            </div>
                         </div>
                     </div>
-                    <small class="text-muted d-block text-center">
-                        <?= round($percent, 1) ?>% vé còn lại
-                    </small>
                 </div>
-            </div>
 
-            <?php if (!empty($tour['anh_minh_hoa'])): ?>
-                <div class="card border-0 shadow-sm">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark fw-bold py-3">
+                        <i class="fas fa-calendar-alt me-2"></i> Lịch trình chi tiết
+                    </div>
                     <div class="card-body p-0">
-                        <a href="uploads/tours/<?= htmlspecialchars($tour['anh_minh_hoa']) ?>" 
-                           data-lightbox="tour-image" 
-                           data-title="<?= htmlspecialchars($tour['ten_tour']) ?>">
-                            <img src="uploads/tours/<?= htmlspecialchars($tour['anh_minh_hoa']) ?>" 
-                                 alt="Ảnh tour" 
-                                 class="img-fluid rounded w-100" 
-                                 style="max-height: 300px; object-fit: cover; cursor: zoom-in;">
-                        </a>
-                        <div class="p-3 text-center">
-                            <small class="text-muted">
-                                <i class="fas fa-image me-1"></i> Nhấn để phóng to
-                            </small>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="20%">Thời gian</th>
+                                        <th width="30%">Tiêu đề</th>
+                                        <th>Hoạt động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($list_lich_trinh)): ?>
+                                        <?php foreach ($list_lich_trinh as $lt): ?>
+                                        <tr>
+                                            <td class="fw-bold text-primary">
+                                                Ngày <?= $lt['ngay_thu'] ?? $lt['thu_tu_ngay'] ?><br>
+                                                <small class="text-muted fw-normal">
+                                                    <?= isset($lt['gio_bat_dau']) ? date('H:i', strtotime($lt['gio_bat_dau'])) : '' ?> - 
+                                                    <?= isset($lt['gio_ket_thuc']) ? date('H:i', strtotime($lt['gio_ket_thuc'])) : '' ?>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <strong><?= $lt['tieu_de'] ?></strong><br>
+                                                <small class="text-muted"><i class="fas fa-map-pin me-1"></i><?= $lt['dia_diem'] ?? '' ?></small>
+                                            </td>
+                                            <td><?= nl2br($lt['noi_dung'] ?? $lt['hoat_dong'] ?? '') ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr><td colspan="3" class="text-center text-muted py-4">Chưa cập nhật lịch trình.</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            <?php else: ?>
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-image text-muted fa-3x mb-3"></i>
-                        <p class="text-muted">Chưa có ảnh minh họa</p>
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success text-white fw-bold py-3">
+                        <i class="fas fa-images me-2"></i> Thư viện ảnh (<?= count($list_anh) ?>)
+                    </div>
+                    <div class="card-body">
+                        <?php if (!empty($list_anh)): ?>
+                            <div class="row g-2">
+                                <?php foreach ($list_anh as $img): ?>
+                                    <div class="col-6 col-md-3">
+                                        <div class="ratio ratio-1x1 border rounded overflow-hidden">
+                                            <a href="<?= BASE_URL . $img['duong_dan'] ?>" target="_blank">
+                                                <img src="<?= BASE_URL . $img['duong_dan'] ?>" class="img-fluid object-fit-cover h-100 w-100" alt="Tour Image">
+                                            </a>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-center text-muted py-3">Chưa có ảnh nào trong thư viện.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
-            <?php endif; ?>
+            </div>
+
+            <div class="col-lg-4">
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-0 position-relative">
+                        <?php if (!empty($tour['anh_minh_hoa'])): ?>
+                            <img src="<?= BASE_URL . $tour['anh_minh_hoa'] ?>" class="img-fluid rounded-top w-100" style="height: 250px; object-fit: cover;">
+                        <?php else: ?>
+                            <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center rounded-top" style="height: 200px;">
+                                <span class="text-muted"><i class="fas fa-image fa-3x"></i></span>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-<?= ($tour['trang_thai'] ?? '') == 'CON_VE' ? 'success' : 'danger' ?> fs-6 shadow">
+                                <?= $tour['trang_thai'] ?? 'UNK' ?>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Ngày khởi hành:</span>
+                                <span class="fw-bold"><?= !empty($tour['ngay_khoi_hanh']) ? date('d/m/Y', strtotime($tour['ngay_khoi_hanh'])) : '-' ?></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Ngày kết thúc:</span>
+                                <span class="fw-bold"><?= !empty($tour['ngay_ket_thuc']) ? date('d/m/Y', strtotime($tour['ngay_ket_thuc'])) : '-' ?></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Số lượng khách:</span>
+                                <span class="fw-bold"><?= $tour['so_khach_toithieu'] ?? 1 ?> - <?= $tour['so_luong_ve'] ?? 0 ?></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Vé còn lại:</span>
+                                <span class="badge bg-primary rounded-pill"><?= $tour['so_ve_con_lai'] ?? 0 ?></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white fw-bold">
+                        <i class="fas fa-tags me-2"></i> Bảng giá chi tiết
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <tr>
+                                <td>Người lớn (>12t)</td>
+                                <td class="text-end fw-bold text-success"><?= number_format($tour['gia_nguoi_lon'] ?? 0) ?> ₫</td>
+                            </tr>
+                            <tr>
+                                <td>Trẻ em (5-11t)</td>
+                                <td class="text-end fw-bold"><?= number_format($tour['gia_tre_em'] ?? 0) ?> ₫</td>
+                            </tr>
+                            <tr>
+                                <td>Em bé (<5t)</td>
+                                <td class="text-end fw-bold"><?= number_format($tour['gia_em_be'] ?? 0) ?> ₫</td>
+                            </tr>
+                            <tr>
+                                <td>Phụ thu / Lễ</td>
+                                <td class="text-end fw-bold text-danger">+ <?= number_format($tour['phu_thu'] ?? 0) ?> ₫</td>
+                            </tr>
+                            <tr class="table-primary">
+                                <td class="fw-bold">GIÁ CHUNG</td>
+                                <td class="text-end fw-bold fs-5"><?= number_format($tour['gia_tour'] ?? 0) ?> ₫</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-info text-white fw-bold">
+                        <i class="fas fa-user-tie me-2"></i> Hướng dẫn viên
+                    </div>
+                    <div class="card-body">
+                        <?php if (!empty($hdv)): ?>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <?php if (!empty($hdv['anh_dai_dien'])): ?>
+                                        <img src="<?= BASE_URL . $hdv['anh_dai_dien'] ?>" class="rounded-circle border" width="50" height="50" style="object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-user text-secondary"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0 fw-bold text-primary"><?= htmlspecialchars($hdv['ho_ten']) ?></h6>
+                                    <small class="text-muted d-block"><i class="fas fa-phone-alt me-1"></i> <?= htmlspecialchars($hdv['so_dien_thoai']) ?></small>
+                                    <small class="text-muted d-block"><i class="fas fa-language me-1"></i> <?= htmlspecialchars($hdv['ngon_ngu']) ?></small>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-user-slash fa-2x mb-2 opacity-25"></i>
+                                <p class="mb-0 small">Chưa phân công HDV cho tour này.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="index.php?act=tour-edit&id=<?= $tour['id'] ?>" class="btn btn-warning fw-bold text-white py-2">
+                        <i class="fas fa-edit me-1"></i> Chỉnh sửa thông tin
+                    </a>
+                    <a href="index.php?act=tour-edit&id=<?= $tour['id'] ?>#schedule" class="btn btn-outline-primary fw-bold py-2">
+                        <i class="fas fa-calendar-plus me-1"></i> Cập nhật lịch trình
+                    </a>
+                </div>
+
+            </div>
         </div>
     </div>
-
-    <div class="mt-4 text-end">
-        <a href="index.php?controller=tour&action=edit&id=<?= $tour['id'] ?>" 
-           class="btn btn-warning shadow-sm me-2">
-            <i class="fas fa-edit me-1"></i> Sửa Tour
-        </a>
-        <a href="index.php?controller=tour&action=delete&id=<?= $tour['id'] ?>" 
-           class="btn btn-danger shadow-sm"
-           onclick="return confirm('Xóa tour này? Dữ liệu sẽ không thể khôi phục.')">
-            <i class="fas fa-trash-alt me-1"></i> Xóa Tour
-        </a>
-    </div>
-</div>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
-
-<style>
-    .card {
-        border-radius: 14px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-    .progress {
-        border-radius: 6px;
-    }
-    .badge {
-        font-weight: 600;
-    }
-    img[alt="Ảnh tour"] {
-        transition: transform 0.3s;
-    }
-    img[alt="Ảnh tour"]:hover {
-        transform: scale(1.02);
-    }
-</style>
+</main>
 
 <?php require_once PATH_ROOT . '/views/footer.php'; ?>

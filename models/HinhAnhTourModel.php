@@ -12,7 +12,7 @@ class HinhAnhTourModel {
     public function getByTour(int $tour_id): array {
         $sql = "SELECT * FROM hinh_anh_tour 
                 WHERE tour_id = :tour_id 
-                ORDER BY thu_tu_hien_thi ASC, id ASC";
+                ORDER BY thu_tu_hien_thi ASC, id DESC"; // Sắp xếp ảnh mới nhất lên đầu
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([':tour_id' => $tour_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -29,9 +29,9 @@ class HinhAnhTourModel {
 
     // Thêm mới ảnh
     public function insert(int $tour_id, string $duong_dan, string $mo_ta_anh = '', int $thu_tu_hien_thi = null): bool {
-        // Nếu không truyền thứ tự, set = max+1
         if ($thu_tu_hien_thi === null) {
-            $sqlOrder = "SELECT COALESCE(MAX(thu_tu_hien_thi), 0) + 1 AS next_order 
+            // Tự động tính thứ tự tiếp theo
+            $sqlOrder = "SELECT COALESCE(MAX(thu_tu_hien_thi), 0) + 1 
                          FROM hinh_anh_tour WHERE tour_id = :tour_id";
             $stmtOrder = $this->conn->prepare($sqlOrder);
             $stmtOrder->execute([':tour_id' => $tour_id]);
@@ -50,7 +50,7 @@ class HinhAnhTourModel {
         ]);
     }
 
-    // Cập nhật ảnh
+    // Cập nhật ảnh (nếu cần sửa mô tả hoặc thứ tự)
     public function update(int $id, string $mo_ta_anh, int $thu_tu_hien_thi, ?string $duong_dan_moi = null): bool {
         if ($duong_dan_moi === null) {
             $sql = "UPDATE hinh_anh_tour 

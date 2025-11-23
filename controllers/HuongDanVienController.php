@@ -1,103 +1,69 @@
 <?php
+require_once 'models/HuongDanVienModel.php';
 
 class HuongDanVienController {
+    private $db;
+    private $hdvModel;
 
-    private $model;
-
-    public function __construct($db) {
-        $this->model = new HuongDanVienModel($db);
+    public function __construct(PDO $db) {
+        $this->db = $db;
+        $this->hdvModel = new HuongDanVienModel($db);
     }
 
-    public function index() {
-        $data = $this->model->all();
-        include ROOT . "/views/huongdanvien/list.php";
+    // 1. Hiển thị danh sách
+    public function index(): void {
+        // Lấy dữ liệu từ model
+        $hdvs = $this->hdvModel->getAll(); 
+        
+        // [FIX] Gọi đúng file view list.php trong thư mục huongdanvien
+        require ROOT . "/views/admin/huongdanvien/list.php";
     }
 
-    public function create() {
-        include ROOT . "/views/huongdanvien/add.php";
+    // 2. Hiển thị form thêm mới
+    public function create(): void {
+        // [FIX] Gọi đúng file view create.php
+        require ROOT . "/views/admin/huongdanvien/create.php";
     }
-public function profile() {
-    $id = $_GET['id'] ?? null;
-    if (!$id) die("Thiếu ID!");
 
-    $hdv = $this->model->getOne($id);
+    // 3. Lưu dữ liệu
+    public function store(): void {
+        // Xử lý upload ảnh nếu có (bạn có thể copy hàm uploadImage từ TourController sang đây nếu cần)
+        // ...
 
-    if (!$hdv) die("HDV không tồn tại!");
+        $this->hdvModel->insert($_POST);
+        
+        // [FIX] Redirect về đúng act=hdv-list
+        header("Location: index.php?act=hdv-list");
+        exit;
+    }
 
-    include ROOT . "/views/huongdanvien/profile.php";
+    // 4. Hiển thị form sửa
+    public function edit(): void {
+        $id = (int)($_GET['id'] ?? 0);
+        $hdv = $this->hdvModel->getOne($id);
+
+        // [FIX] Gọi đúng file view edit.php
+        require ROOT . "/views/admin/huongdanvien/edit.php";
+    }
+
+    // 5. Cập nhật dữ liệu
+    public function update(): void {
+        $id = (int)$_POST['id'];
+        $this->hdvModel->update($id, $_POST);
+
+        // [FIX] Redirect về đúng act=hdv-list
+        header("Location: index.php?act=hdv-list");
+        exit;
+    }
+
+    // 6. Xóa
+    public function delete(): void {
+        $id = (int)($_GET['id'] ?? 0);
+        $this->hdvModel->delete($id);
+
+        // [FIX] Redirect về đúng act=hdv-list
+        header("Location: index.php?act=hdv-list");
+        exit;
+    }
 }
-
-
-    public function store() {
-
-        // xử lý ảnh
-        $file = $_FILES['anh_dai_dien'] ?? null;
-        $anh = "";
-
-        if ($file && $file['size'] > 0) {
-            $target = "uploads/hdv/" . time() . "_" . $file['name'];
-            move_uploaded_file($file['tmp_name'], $target);
-            $anh = $target;
-        }
-
-        $data = [
-            ':ho_ten' => $_POST['ho_ten'],
-            ':ngay_sinh' => $_POST['ngay_sinh'],
-            ':so_dien_thoai' => $_POST['so_dien_thoai'],
-            ':email' => $_POST['email'],
-            ':ngon_ngu' => implode(",", $_POST['ngon_ngu']), // nhiều ngôn ngữ
-            ':chung_chi' => $_POST['chung_chi'],
-            ':kinh_nghiem' => $_POST['kinh_nghiem'],
-            ':suc_khoe' => $_POST['suc_khoe'],
-            ':anh_dai_dien' => $anh,
-            ':trang_thai' => $_POST['trang_thai']
-        ];
-
-        $this->model->insert($data);
-        header("Location: index.php?controller=huongdanvien&action=index");
-    }
-
-    public function edit() {
-        $id = $_GET['id'];
-        $hdv = $this->model->getOne($id);
-
-        include ROOT . "/views/huongdanvien/edit.php";
-    }
-
-    public function update() {
-        $id = $_POST['id'];
-
-        // Update ảnh
-        $file = $_FILES['anh_dai_dien'];
-        $anh = $_POST['anh_cu'];
-
-        if ($file['size'] > 0) {
-            $target = "uploads/hdv/" . time() . "_" . $file['name'];
-            move_uploaded_file($file['tmp_name'], $target);
-            $anh = $target;
-        }
-
-        $data = [
-            ':ho_ten' => $_POST['ho_ten'],
-            ':ngay_sinh' => $_POST['ngay_sinh'],
-            ':so_dien_thoai' => $_POST['so_dien_thoai'],
-            ':email' => $_POST['email'],
-            ':ngon_ngu' => implode(",", $_POST['ngon_ngu']),
-            ':chung_chi' => $_POST['chung_chi'],
-            ':kinh_nghiem' => $_POST['kinh_nghiem'],
-            ':suc_khoe' => $_POST['suc_khoe'],
-            ':anh_dai_dien' => $anh,
-            ':trang_thai' => $_POST['trang_thai']
-        ];
-
-        $this->model->update($id, $data);
-        header("Location: index.php?controller=huongdanvien&action=index");
-    }
-
-    public function delete() {
-        $id = $_GET['id'];
-        $this->model->delete($id);
-        header("Location: index.php?controller=huongdanvien&action=index");
-    }
-
-}
+?>
