@@ -1,22 +1,29 @@
 <?php require_once PATH_ROOT . '/views/header.php'; ?>
+
 <?php 
+    // Nhận biến từ Controller, gán mặc định nếu chưa có để tránh lỗi
     $dsNcc = $dsNcc ?? []; 
-    $dsHDV = $dsHDV ?? []; // Khởi tạo biến để tránh lỗi nếu rỗng
+    $dsHDV = $dsHDV ?? []; 
+    $dsDanhMuc = $dsDanhMuc ?? []; 
 ?>
 
 <main>
     <div class="container-fluid px-4">
         <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
             <h2 class="fw-bold text-success"><i class="fas fa-plus-circle me-2"></i>Thêm Tour Mới</h2>
-            <a href="index.php?act=tours" class="btn btn-secondary shadow-sm"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+            <a href="index.php?act=tours" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> Quay lại
+            </a>
         </div>
 
         <form action="index.php?act=tour-store" method="POST" enctype="multipart/form-data">
             <div class="row">
+                
                 <div class="col-lg-8">
                     <div class="card mb-4 border-0 shadow-sm">
                         <div class="card-header bg-white fw-bold text-primary py-3">1. Thông tin & Giá</div>
                         <div class="card-body">
+                            
                             <div class="row g-3 mb-3">
                                 <div class="col-md-8">
                                     <label class="form-label fw-bold">Tên Tour <span class="text-danger">*</span></label>
@@ -30,10 +37,18 @@
 
                             <div class="row g-3 mb-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-bold">Loại hình</label>
+                                    <label class="form-label fw-bold">Danh mục Tour</label>
                                     <select name="loai_tour" class="form-select">
-                                        <option value="TRONG_NUOC">Trong nước</option>
-                                        <option value="QUOC_TE">Quốc tế</option>
+                                        <option value="">-- Chọn danh mục --</option>
+                                        <?php foreach ($dsDanhMuc as $dm): ?>
+                                            <option value="<?= $dm['id'] ?>">
+                                                <?= htmlspecialchars($dm['ten_danh_muc']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                        <?php if(empty($dsDanhMuc)): ?>
+                                            <option value="TRONG_NUOC">Trong nước</option>
+                                            <option value="QUOC_TE">Quốc tế</option>
+                                        <?php endif; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
@@ -49,18 +64,18 @@
                                     <label class="form-label fw-bold">Đối tượng khách</label>
                                     <select name="doi_tuong_khach" class="form-select">
                                         <option value="KHACH_LE">Khách lẻ</option>
-                                        <option value="KHACH_DOAN">Khách đoàn (Doanh nghiệp)</option>
+                                        <option value="KHACH_DOAN">Khách đoàn</option>
                                         <option value="GIA_DINH">Gia đình</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3 bg-light p-3 rounded border">
                                 <label class="form-label fw-bold text-success"><i class="fas fa-tags me-1"></i> Bảng giá chi tiết (VNĐ)</label>
                                 <div class="row g-2">
                                     <div class="col-md-3">
                                         <label class="small text-muted">Người lớn (>12t)</label>
-                                        <input type="number" name="gia_nguoi_lon" class="form-control fw-bold" placeholder="0" oninput="syncPrice(this)">
+                                        <input type="number" name="gia_nguoi_lon" class="form-control fw-bold text-primary" placeholder="0" oninput="syncPrice(this)">
                                     </div>
                                     <div class="col-md-3">
                                         <label class="small text-muted">Trẻ em (5-11t)</label>
@@ -75,7 +90,10 @@
                                         <input type="number" name="phu_thu" class="form-control" placeholder="0">
                                     </div>
                                 </div>
-                                <div class="form-text small">* Giá hiển thị chính: <input type="number" name="gia_tour" id="main_price" class="d-inline-block form-control form-control-sm w-25" placeholder="Giá chung"></div>
+                                <div class="mt-2 d-flex align-items-center">
+                                    <label class="small me-2 fw-bold text-secondary">* Giá hiển thị chính:</label>
+                                    <input type="number" name="gia_tour" id="main_price" class="form-control form-control-sm w-25 fw-bold text-danger" placeholder="Tự động lấy giá NL">
+                                </div>
                             </div>
 
                             <div class="row g-3 mb-3">
@@ -96,7 +114,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-info"><i class="fas fa-handshake me-1"></i> Nhà cung cấp dịch vụ</label>
                                 <div class="border rounded p-3 bg-white shadow-sm" style="max-height: 150px; overflow-y: auto;">
-                                    <?php if(!empty($dsNcc)): ?>
+                                    <?php if (!empty($dsNcc)): ?>
                                         <div class="row g-2">
                                             <?php foreach ($dsNcc as $ncc): ?>
                                                 <div class="col-md-6">
@@ -111,28 +129,19 @@
                                             <?php endforeach; ?>
                                         </div>
                                     <?php else: ?>
-                                        <p class="text-muted small mb-0">Chưa có NCC. <a href="index.php?act=nha-cung-cap">Thêm ngay</a></p>
+                                        <p class="text-muted small mb-0">Chưa có NCC. <a href="index.php?act=nha-cung-cap" target="_blank">Thêm ngay</a></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold"><i class="fas fa-user-tie me-1"></i> Hướng dẫn viên (Dự kiến)</label>
-                                <select name="hdv_id" class="form-select">
-                                    <option value="">-- Chọn Hướng dẫn viên --</option>
-                                    <?php if (!empty($dsHDV)): foreach ($dsHDV as $hdv): ?>
-                                        <option value="<?= $hdv['id'] ?>">
-                                            <?= htmlspecialchars($hdv['ho_ten']) ?> 
-                                            (<?= !empty($hdv['ngon_ngu']) ? $hdv['ngon_ngu'] : 'Chưa cập nhật' ?>)
-                                        </option>
-                                    <?php endforeach; endif; ?>
-                                </select>
-                                <div class="form-text">Chọn HDV phụ trách chính cho tour này (nếu có).</div>
-                            </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Mô tả chi tiết</label>
-                                <textarea name="mo_ta_chi_tiet" class="form-control" rows="4"></textarea>
+                                <label class="form-label fw-bold">Mô tả ngắn (SEO)</label>
+                                <textarea name="mo_ta_ngan" class="form-control" rows="2" placeholder="Tóm tắt ngắn gọn..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Chi tiết lịch trình (Tổng quan)</label>
+                                <textarea name="mo_ta_chi_tiet" class="form-control" rows="5" placeholder="Nhập chi tiết nội dung tour..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -152,6 +161,18 @@
                             </div>
                             
                             <div class="mb-3">
+                                <label class="form-label fw-bold"><i class="fas fa-user-tie me-1"></i> Hướng dẫn viên</label>
+                                <select name="hdv_id" class="form-select">
+                                    <option value="">-- Chọn HDV --</option>
+                                    <?php foreach ($dsHDV as $hdv): ?>
+                                        <option value="<?= $hdv['id'] ?>">
+                                            <?= htmlspecialchars($hdv['ho_ten']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label fw-bold">Số lượng khách (Min - Max)</label>
                                 <div class="input-group">
                                     <input type="number" name="so_khach_toithieu" class="form-control" value="10" placeholder="Min">
@@ -168,7 +189,7 @@
                                 <label class="form-label fw-bold">Ảnh đại diện</label>
                                 <input type="file" name="anh_minh_hoa" class="form-control" accept="image/*" onchange="previewImage(this)">
                                 <div class="mt-2 text-center">
-                                    <img id="imgPreview" src="https://via.placeholder.com/300x200?text=No+Image" class="img-fluid rounded border" style="max-height: 150px;">
+                                    <img id="imgPreview" src="https://via.placeholder.com/300x200?text=No+Image" class="img-fluid rounded border" style="max-height: 150px; object-fit: cover;">
                                 </div>
                             </div>
 
@@ -179,11 +200,14 @@
                                     <option value="HET_VE">Hết vé</option>
                                     <option value="DA_KHOI_HANH">Đã khởi hành</option>
                                     <option value="HUY">Tạm dừng/Hủy</option>
+                                    <option value="NGUNG_HOAT_DONG">Ngừng hoạt động</option>
                                 </select>
                             </div>
                             
                             <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-success fw-bold py-2">LƯU TOUR MỚI</button>
+                                <button type="submit" class="btn btn-success fw-bold py-2">
+                                    <i class="fas fa-save me-2"></i> LƯU TOUR MỚI
+                                </button>
                                 <a href="index.php?act=tours" class="btn btn-outline-secondary">Hủy bỏ</a>
                             </div>
                         </div>
@@ -195,19 +219,25 @@
 </main>
 
 <script>
+// Tự động điền giá chung khi nhập giá người lớn
 function syncPrice(input) {
     var mainPrice = document.getElementById('main_price');
+    // Chỉ tự động điền nếu ô giá chung đang trống hoặc bằng 0
     if (mainPrice.value == '' || mainPrice.value == '0') {
         mainPrice.value = input.value;
     }
 }
 
+// Xem trước ảnh khi chọn file
 function previewImage(input) {
     if (input.files && input.files[0]) {
         var reader = new FileReader();
-        reader.onload = function (e) { document.getElementById('imgPreview').src = e.target.result; };
+        reader.onload = function (e) { 
+            document.getElementById('imgPreview').src = e.target.result; 
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
 </script>
+
 <?php require_once PATH_ROOT . '/views/footer.php'; ?>

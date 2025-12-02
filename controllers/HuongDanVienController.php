@@ -2,68 +2,88 @@
 require_once 'models/HuongDanVienModel.php';
 
 class HuongDanVienController {
+
     private $db;
-    private $hdvModel;
+    private $model;
 
     public function __construct(PDO $db) {
         $this->db = $db;
-        $this->hdvModel = new HuongDanVienModel($db);
+        $this->model = new HuongDanVienModel($db);
     }
 
-    // 1. Hiển thị danh sách
-    public function index(): void {
-        // Lấy dữ liệu từ model
-        $hdvs = $this->hdvModel->getAll(); 
+    // Hàm phụ trợ cho upload ảnh đại diện HDV
+    private function uploadImage($oldImage = null) {
+        if (empty($_FILES['anh_dai_dien']['name'])) return $oldImage;
         
-        // [FIX] Gọi đúng file view list.php trong thư mục huongdanvien
+        $folder = "uploads/hdv/";
+        if (!is_dir(PATH_ROOT . $folder)) mkdir(PATH_ROOT . $folder, 0777, true);
+
+        // Xóa ảnh cũ
+        if ($oldImage && file_exists(PATH_ROOT . $oldImage)) unlink(PATH_ROOT . $oldImage);
+
+        $ext = pathinfo($_FILES['anh_dai_dien']['name'], PATHINFO_EXTENSION);
+        $newName = $folder . "hdv_" . time() . "_" . rand(100,999) . "." . $ext;
+        
+        move_uploaded_file($_FILES['anh_dai_dien']['tmp_name'], PATH_ROOT . $newName);
+        return $newName;
+    }
+
+    // 1. Danh sách HDV
+    public function index() {
+        $hdvs = $this->model->getAll(); 
+        if (is_object($hdvs)) {
+            $hdvs = $hdvs->fetchAll(PDO::FETCH_ASSOC);
+        }
         require ROOT . "/views/admin/huongdanvien/list.php";
     }
 
-    // 2. Hiển thị form thêm mới
-    public function create(): void {
-        // [FIX] Gọi đúng file view create.php
+    // 2. Form thêm mới
+    public function create() {
         require ROOT . "/views/admin/huongdanvien/create.php";
     }
 
     // 3. Lưu dữ liệu
-    public function store(): void {
-        // Xử lý upload ảnh nếu có (bạn có thể copy hàm uploadImage từ TourController sang đây nếu cần)
-        // ...
-
-        $this->hdvModel->insert($_POST);
+    public function store() {
+        $_POST['anh_dai_dien'] = $this->uploadImage();
         
-        // [FIX] Redirect về đúng act=hdv-list
+        $this->model->insert($_POST);
         header("Location: index.php?act=hdv-list");
         exit;
     }
 
-    // 4. Hiển thị form sửa
-    public function edit(): void {
-        $id = (int)($_GET['id'] ?? 0);
-        $hdv = $this->hdvModel->getOne($id);
-
-        // [FIX] Gọi đúng file view edit.php
+    // 4. Form sửa
+    public function edit() {
+        $id = $_GET['id'];
+        $hdv = $this->model->getOne($id);
+        
+        if (!$hdv) die("HDV không tồn tại!");
         require ROOT . "/views/admin/huongdanvien/edit.php";
     }
 
     // 5. Cập nhật dữ liệu
-    public function update(): void {
-        $id = (int)$_POST['id'];
-        $this->hdvModel->update($id, $_POST);
-
-        // [FIX] Redirect về đúng act=hdv-list
+    public function update() {
+        $id = $_POST['id'];
+        $anh_cu = $_POST['anh_cu'] ?? null;
+        
+        $_POST['anh_dai_dien'] = $this->uploadImage($anh_cu);
+        
+        $this->model->update($id, $_POST);
         header("Location: index.php?act=hdv-list");
         exit;
     }
 
     // 6. Xóa
-    public function delete(): void {
-        $id = (int)($_GET['id'] ?? 0);
-        $this->hdvModel->delete($id);
+    public function delete() {
+        $id = $_GET['id'];
+        $hdv = $this->model->getOne($id);
+        
+        // Xóa ảnh vật lý
+        if ($hdv && !empty($hdv['anh_dai_dien']) && file_exists(PATH_ROOT . $hdv['anh_dai_dien'])) {
+            unlink(PATH_ROOT . $hdv['anh_dai_dien']);
+        }
 
-        // [FIX] Redirect về đúng act=hdv-list
+        $this->model->delete($id);
         header("Location: index.php?act=hdv-list");
         exit;
     }
 }
-?>

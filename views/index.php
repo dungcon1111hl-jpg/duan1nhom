@@ -110,7 +110,7 @@
                             <div class="collapse" id="collapseTrip" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=lich-khoi-hanh">Lịch khởi hành</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=huong-dan-vien">Hướng dẫn viên</a>
+                                    <a class="nav-link" href="<?= BASE_URL ?>?act=hdv-list">Hướng dẫn viên</a>
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=lich-ban-hdv">Lịch bận HDV</a>
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=phan-cong">Phân công nhân sự</a>
                                 </nav>
@@ -139,7 +139,7 @@
                             </a>
                             <div class="collapse" id="collapseService" aria-labelledby="headingFour" data-bs-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=dich-vu">Dịch vụ phát sinh</a>
+                                    <a class="nav-link" href="<?= BASE_URL ?>?act=dichvu-list">Dịch vụ phát sinh</a>
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=chi-phi">Chi phí phát sinh</a>
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=nha-cung-cap">Nhà cung cấp</a>
                                     <a class="nav-link" href="<?= BASE_URL ?>?act=lien-ket-ncc">Liên kết Tour - NCC</a>
@@ -160,7 +160,7 @@
                             </div>
 
                             <div class="sb-sidenav-menu-heading">Tài chính</div>
-                            <a class="nav-link" href="<?= BASE_URL ?>?act=thanh-toan">
+                            <a class="nav-link" href="<?= BASE_URL ?>?act=thanhtoan-list">
                                 <div class="sb-nav-link-icon"><i class="fas fa-money-bill-wave text-success"></i></div>
                                 THANH TOÁN
                             </a>

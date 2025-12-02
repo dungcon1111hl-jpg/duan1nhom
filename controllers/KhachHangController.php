@@ -12,7 +12,8 @@ class KhachHangController {
     // HIỂN THỊ DANH SÁCH
     // ===========================
     public function index() {
-        $data = $this->model->getAll();
+        // SỬA: Đổi tên biến $data thành $customers để khớp với View
+        $customers = $this->model->getAll(); 
         include "views/admin/khachhang/index.php";
     }
 
@@ -27,8 +28,14 @@ class KhachHangController {
     // LƯU KHÁCH HÀNG MỚI
     // ===========================
     public function store() {
-        $this->model->create($_POST);
-        header("Location: index.php?act=khachhang_list");
+        try {
+            $this->model->create($_POST);
+            $_SESSION['success'] = "Thêm khách hàng thành công!";
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+        }
+        // SỬA: Redirect về đúng act=khach-hang
+        header("Location: index.php?act=khach-hang");
         exit;
     }
 
@@ -51,8 +58,14 @@ class KhachHangController {
     // ===========================
     public function update() {
         $id = $_POST['id'];
-        $this->model->update($id, $_POST);
-        header("Location: index.php?act=khachhang_list");
+        try {
+            $this->model->update($id, $_POST);
+            $_SESSION['success'] = "Cập nhật thành công!";
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+        }
+        // SỬA: Redirect về đúng act=khach-hang
+        header("Location: index.php?act=khach-hang");
         exit;
     }
 
@@ -62,9 +75,10 @@ class KhachHangController {
     public function delete() {
         $id = $_GET['id'] ?? 0;
         $this->model->delete($id);
-        header("Location: index.php?act=khachhang_list");
+        $_SESSION['success'] = "Đã xóa khách hàng!";
+        // SỬA: Redirect về đúng act=khach-hang
+        header("Location: index.php?act=khach-hang");
         exit;
     }
 }
-
 ?>

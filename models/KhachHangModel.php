@@ -8,7 +8,7 @@ class KhachHangModel
         $this->db = $db;
     }
 
-    /* =============================
+    /* ==============================
         LẤY TẤT CẢ KHÁCH HÀNG
     ============================== */
     public function getAll() {
@@ -17,7 +17,7 @@ class KhachHangModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /* =============================
+    /* ==============================
         LẤY THEO ID
     ============================== */
     public function getById($id) {
@@ -26,48 +26,44 @@ class KhachHangModel
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* =============================
-        CHECK TRÙNG PHONE
+    /* ==============================
+        KIỂM TRA TRÙNG SỐ ĐIỆN THOẠI
     ============================== */
     public function existsByPhone($phone) {
-        $stmt = $this->db->prepare(
-            "SELECT id FROM khach_hang WHERE so_dien_thoai = ?"
-        );
+        $stmt = $this->db->prepare("SELECT id FROM khach_hang WHERE so_dien_thoai = ?");
         $stmt->execute([$phone]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* =============================
-        CHECK TRÙNG EMAIL
+    /* ==============================
+        KIỂM TRA TRÙNG EMAIL
     ============================== */
     public function existsByEmail($email) {
-        $stmt = $this->db->prepare(
-            "SELECT id FROM khach_hang WHERE email = ?"
-        );
+        $stmt = $this->db->prepare("SELECT id FROM khach_hang WHERE email = ?");
         $stmt->execute([$email]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* =============================
-        CREATE
+    /* ==============================
+        TẠO MỚI KHÁCH HÀNG
     ============================== */
     public function create($data) {
-
         // Validate cơ bản
         if (empty($data['ho_ten']) || empty($data['so_dien_thoai'])) {
             throw new Exception("Họ tên và số điện thoại là bắt buộc.");
         }
 
-        // Check trùng SĐT
+        // Kiểm tra trùng số điện thoại
         if ($this->existsByPhone($data['so_dien_thoai'])) {
             throw new Exception("Số điện thoại đã tồn tại!");
         }
 
-        // Check trùng email
+        // Kiểm tra trùng email
         if (!empty($data['email']) && $this->existsByEmail($data['email'])) {
             throw new Exception("Email đã tồn tại!");
         }
 
+        // Câu lệnh INSERT không cần chỉ định `id`
         $stmt = $this->db->prepare("
             INSERT INTO khach_hang 
                 (ho_ten, gioi_tinh, ngay_sinh, email, so_dien_thoai, dia_chi)
@@ -84,11 +80,10 @@ class KhachHangModel
         ]);
     }
 
-    /* =============================
-        UPDATE
+    /* ==============================
+        CẬP NHẬT KHÁCH HÀNG
     ============================== */
     public function update($id, $data) {
-
         if (!$this->getById($id)) {
             throw new Exception("Khách hàng không tồn tại!");
         }
@@ -115,16 +110,16 @@ class KhachHangModel
         ]);
     }
 
-    /* =============================
-        DELETE THẬT (không soft delete)
+    /* ==============================
+        XÓA KHÁCH HÀNG
     ============================== */
     public function delete($id) {
         $stmt = $this->db->prepare("DELETE FROM khach_hang WHERE id = ?");
         return $stmt->execute([$id]);
     }
 
-    /* =============================
-        SEARCH
+    /* ==============================
+        TÌM KIẾM KHÁCH HÀNG
     ============================== */
     public function search($keyword) {
         $keyword = "%$keyword%";
@@ -132,14 +127,12 @@ class KhachHangModel
         $stmt = $this->db->prepare("
             SELECT * FROM khach_hang
             WHERE ho_ten LIKE ? 
-               OR so_dien_thoai LIKE ?
+               OR so_dien_thoai LIKE ? 
                OR email LIKE ?
         ");
 
         $stmt->execute([$keyword, $keyword, $keyword]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
 }
-
 ?>
