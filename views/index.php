@@ -1,755 +1,179 @@
-<!DOCTYPE html>
-<html lang="en">
-        <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="Hệ thống quản lý Tour du lịch" />
-        <meta name="author" content="" />
-        <title>Dashboard - Quản trị viên</title>
-        
-        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
-        <link href="<?= BASE_URL ?>views/css/styles.css" rel="stylesheet" />
-        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+<?php require_once 'views/header.php'; ?>
 
-        <style>
-            :root {
-                --bs-body-font-size: 0.875rem; /* Giảm xuống 14px */
-            }
-            body {
-                font-size: var(--bs-body-font-size);
-            }
-            /* Tinh chỉnh Menu trái */
-            .sb-sidenav-menu .nav-link {
-                font-size: 0.9rem;
-            }
-            .sb-sidenav-menu-heading {
-                font-size: 0.75rem;
-                font-weight: bold;
-                color: rgba(255,255,255,0.4);
-            }
-            /* Tinh chỉnh Logo */
-            .navbar-brand {
-                font-size: 1.1rem;
-            }
-            /* Tinh chỉnh Tiêu đề trang */
-            h1, .h1 { font-size: 1.5rem; font-weight: 600; }
-            h2, .h2 { font-size: 1.25rem; font-weight: 600; }
-            h3, .h3 { font-size: 1.1rem; }
-            
-            /* Tinh chỉnh Bảng và Form */
-            .table { font-size: 0.85rem; }
-            .form-control, .form-select, .btn { font-size: 0.875rem; }
-            .input-group-text { font-size: 0.875rem; }
-            
-            /* Badge trạng thái nhỏ gọn */
-            .badge { font-size: 0.75rem; font-weight: 500; padding: 0.4em 0.6em; }
-            
-            /* Dropdown menu */
-            .dropdown-item { font-size: 0.875rem; }
-        </style>
-    </head>
-    <body class="sb-nav-fixed">
-        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark shadow">
-            <a class="navbar-brand ps-3 fw-bold text-uppercase" href="<?= BASE_URL ?>?act=admin">
-                <i class="fas fa-globe-asia me-2"></i>Tour Manager
-            </a>
-            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
-                <div class="input-group input-group-sm">
-                    <input class="form-control" type="text" placeholder="Tìm kiếm nhanh..." aria-label="Search" />
-                    <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
-                </div>
-            </form>
-            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle fa-lg fa-fw"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog me-2 text-muted"></i>Cài đặt</a></li>
-                        <li><a class="dropdown-item" href="#!"><i class="fas fa-history me-2 text-muted"></i>Nhật ký hoạt động</a></li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>?act=logout"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-        
-        <div id="layoutSidenav">
-            <div id="layoutSidenav_nav">
-                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
-                    <div class="sb-sidenav-menu">
-                        <div class="nav">
-                            <div class="sb-sidenav-menu-heading">Tổng quan</div>
-                            <a class="nav-link" href="<?= BASE_URL ?>?act=admin">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt text-info"></i></div>
-                                Dashboard
-                            </a>
-                            
-                            <div class="sb-sidenav-menu-heading">Sản phẩm</div>
-                            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseTour" aria-expanded="false" aria-controls="collapseTour">
-                                <div class="sb-nav-link-icon"><i class="fas fa-suitcase-rolling text-warning"></i></div>
-                                QUẢN LÝ TOUR
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseTour" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=tours">Quản lý thông tin Tour</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=tours">Quản lý hình ảnh Tour</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=tours">Quản lý lịch trình Tour</a>
-                                </nav>
-                            </div>
-
-                            <div class="sb-sidenav-menu-heading">Điều hành</div>
-                            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseTrip" aria-expanded="false" aria-controls="collapseTrip">
-                                <div class="sb-nav-link-icon"><i class="fas fa-plane-departure text-success"></i></div>
-                                LỊCH & CHUYẾN ĐI
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseTrip" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=lich-khoi-hanh">Lịch khởi hành</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=hdv-list">Hướng dẫn viên</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=lich-ban-hdv">Lịch bận HDV</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=phan-cong">Phân công nhân sự</a>
-                                </nav>
-                            </div>
-
-                            <div class="sb-sidenav-menu-heading">Kinh doanh</div>
-                            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseBooking" aria-expanded="false" aria-controls="collapseBooking">
-                                <div class="sb-nav-link-icon"><i class="fas fa-ticket-alt text-danger"></i></div>
-                                ĐẶT TOUR (BOOKING)
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseBooking" aria-labelledby="headingThree" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=bookings">Thông tin đặt tour</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=booking-history">Lịch sử booking</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=khach-hang">Thông tin khách hàng</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=ds-khach-tour">DS khách tham gia</a>
-                                </nav>
-                            </div>
-
-                            <div class="sb-sidenav-menu-heading">Hậu cần</div>
-                            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseService" aria-expanded="false" aria-controls="collapseService">
-                                <div class="sb-nav-link-icon"><i class="fas fa-concierge-bell text-info"></i></div>
-                                DỊCH VỤ & CHI PHÍ
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseService" aria-labelledby="headingFour" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=dichvu-list">Dịch vụ phát sinh</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=chi-phi">Chi phí phát sinh</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=nha-cung-cap">Nhà cung cấp</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=lien-ket-ncc">Liên kết Tour - NCC</a>
-                                </nav>
-                            </div>
-
-                            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseOperation" aria-expanded="false" aria-controls="collapseOperation">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tasks text-primary"></i></div>
-                                ĐIỀU HÀNH TOUR
-                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                            </a>
-                            <div class="collapse" id="collapseOperation" aria-labelledby="headingFive" data-bs-parent="#sidenavAccordion">
-                                <nav class="sb-sidenav-menu-nested nav">
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=diem-danh">Điểm danh khách</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=phan-phong">Phân phòng khách sạn</a>
-                                    <a class="nav-link" href="<?= BASE_URL ?>?act=nhat-ky-tour">Nhật ký tour</a>
-                                </nav>
-                            </div>
-
-                            <div class="sb-sidenav-menu-heading">Tài chính</div>
-                            <a class="nav-link" href="<?= BASE_URL ?>?act=thanhtoan-list">
-                                <div class="sb-nav-link-icon"><i class="fas fa-money-bill-wave text-success"></i></div>
-                                THANH TOÁN
-                            </a>
-                        </div>
-                    </div>
-                    <div class="sb-sidenav-footer py-2">
-                        <div class="small text-muted">Đăng nhập bởi:</div>
-                        <strong class="text-light"><?php echo isset($_SESSION['user_admin']['username']) ? $_SESSION['user_admin']['username'] : 'Admin'; ?></strong>
-                    </div>
-                </nav>
-            </div>
-            <div id="layoutSidenav_content">
-                <main>
-                    <div class="container-fluid px-4">
-                        <h1 class="mt-4">Dashboard</h1>
-                        <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item active">Dashboard</li>
-                        </ol>
-                        <div class="row">
-                            <div class="col-xl-3 col-md-6">
-                                <div class="card bg-primary text-white mb-4">
-                                    <div class="card-body">Primary Card</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="#">View Details</a>
-                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-3 col-md-6">
-                                <div class="card bg-warning text-white mb-4">
-                                    <div class="card-body">Warning Card</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="#">View Details</a>
-                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-3 col-md-6">
-                                <div class="card bg-success text-white mb-4">
-                                    <div class="card-body">Success Card</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="#">View Details</a>
-                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-3 col-md-6">
-                                <div class="card bg-danger text-white mb-4">
-                                    <div class="card-body">Danger Card</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="#">View Details</a>
-                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-xl-6">
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <i class="fas fa-chart-area me-1"></i>
-                                        Area Chart Example
-                                    </div>
-                                    <div class="card-body"><canvas id="myAreaChart" width="100%" height="40"></canvas></div>
-                                </div>
-                            </div>
-                            <div class="col-xl-6">
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <i class="fas fa-chart-bar me-1"></i>
-                                        Bar Chart Example
-                                    </div>
-                                    <div class="card-body"><canvas id="myBarChart" width="100%" height="40"></canvas></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                DataTable Example
-                            </div>
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Position</th>
-                                            <th>Office</th>
-                                            <th>Age</th>
-                                            <th>Start date</th>
-                                            <th>Salary</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Position</th>
-                                            <th>Office</th>
-                                            <th>Age</th>
-                                            <th>Start date</th>
-                                            <th>Salary</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <tr>
-                                            <td>Tiger Nixon</td>
-                                            <td>System Architect</td>
-                                            <td>Edinburgh</td>
-                                            <td>61</td>
-                                            <td>2011/04/25</td>
-                                            <td>$320,800</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Garrett Winters</td>
-                                            <td>Accountant</td>
-                                            <td>Tokyo</td>
-                                            <td>63</td>
-                                            <td>2011/07/25</td>
-                                            <td>$170,750</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ashton Cox</td>
-                                            <td>Junior Technical Author</td>
-                                            <td>San Francisco</td>
-                                            <td>66</td>
-                                            <td>2009/01/12</td>
-                                            <td>$86,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cedric Kelly</td>
-                                            <td>Senior Javascript Developer</td>
-                                            <td>Edinburgh</td>
-                                            <td>22</td>
-                                            <td>2012/03/29</td>
-                                            <td>$433,060</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Airi Satou</td>
-                                            <td>Accountant</td>
-                                            <td>Tokyo</td>
-                                            <td>33</td>
-                                            <td>2008/11/28</td>
-                                            <td>$162,700</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Brielle Williamson</td>
-                                            <td>Integration Specialist</td>
-                                            <td>New York</td>
-                                            <td>61</td>
-                                            <td>2012/12/02</td>
-                                            <td>$372,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Herrod Chandler</td>
-                                            <td>Sales Assistant</td>
-                                            <td>San Francisco</td>
-                                            <td>59</td>
-                                            <td>2012/08/06</td>
-                                            <td>$137,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Rhona Davidson</td>
-                                            <td>Integration Specialist</td>
-                                            <td>Tokyo</td>
-                                            <td>55</td>
-                                            <td>2010/10/14</td>
-                                            <td>$327,900</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Colleen Hurst</td>
-                                            <td>Javascript Developer</td>
-                                            <td>San Francisco</td>
-                                            <td>39</td>
-                                            <td>2009/09/15</td>
-                                            <td>$205,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sonya Frost</td>
-                                            <td>Software Engineer</td>
-                                            <td>Edinburgh</td>
-                                            <td>23</td>
-                                            <td>2008/12/13</td>
-                                            <td>$103,600</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jena Gaines</td>
-                                            <td>Office Manager</td>
-                                            <td>London</td>
-                                            <td>30</td>
-                                            <td>2008/12/19</td>
-                                            <td>$90,560</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Quinn Flynn</td>
-                                            <td>Support Lead</td>
-                                            <td>Edinburgh</td>
-                                            <td>22</td>
-                                            <td>2013/03/03</td>
-                                            <td>$342,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Charde Marshall</td>
-                                            <td>Regional Director</td>
-                                            <td>San Francisco</td>
-                                            <td>36</td>
-                                            <td>2008/10/16</td>
-                                            <td>$470,600</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Haley Kennedy</td>
-                                            <td>Senior Marketing Designer</td>
-                                            <td>London</td>
-                                            <td>43</td>
-                                            <td>2012/12/18</td>
-                                            <td>$313,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Tatyana Fitzpatrick</td>
-                                            <td>Regional Director</td>
-                                            <td>London</td>
-                                            <td>19</td>
-                                            <td>2010/03/17</td>
-                                            <td>$385,750</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Michael Silva</td>
-                                            <td>Marketing Designer</td>
-                                            <td>London</td>
-                                            <td>66</td>
-                                            <td>2012/11/27</td>
-                                            <td>$198,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Paul Byrd</td>
-                                            <td>Chief Financial Officer (CFO)</td>
-                                            <td>New York</td>
-                                            <td>64</td>
-                                            <td>2010/06/09</td>
-                                            <td>$725,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Gloria Little</td>
-                                            <td>Systems Administrator</td>
-                                            <td>New York</td>
-                                            <td>59</td>
-                                            <td>2009/04/10</td>
-                                            <td>$237,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Bradley Greer</td>
-                                            <td>Software Engineer</td>
-                                            <td>London</td>
-                                            <td>41</td>
-                                            <td>2012/10/13</td>
-                                            <td>$132,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Dai Rios</td>
-                                            <td>Personnel Lead</td>
-                                            <td>Edinburgh</td>
-                                            <td>35</td>
-                                            <td>2012/09/26</td>
-                                            <td>$217,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jenette Caldwell</td>
-                                            <td>Development Lead</td>
-                                            <td>New York</td>
-                                            <td>30</td>
-                                            <td>2011/09/03</td>
-                                            <td>$345,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Yuri Berry</td>
-                                            <td>Chief Marketing Officer (CMO)</td>
-                                            <td>New York</td>
-                                            <td>40</td>
-                                            <td>2009/06/25</td>
-                                            <td>$675,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Caesar Vance</td>
-                                            <td>Pre-Sales Support</td>
-                                            <td>New York</td>
-                                            <td>21</td>
-                                            <td>2011/12/12</td>
-                                            <td>$106,450</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doris Wilder</td>
-                                            <td>Sales Assistant</td>
-                                            <td>Sidney</td>
-                                            <td>23</td>
-                                            <td>2010/09/20</td>
-                                            <td>$85,600</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Angelica Ramos</td>
-                                            <td>Chief Executive Officer (CEO)</td>
-                                            <td>London</td>
-                                            <td>47</td>
-                                            <td>2009/10/09</td>
-                                            <td>$1,200,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Gavin Joyce</td>
-                                            <td>Developer</td>
-                                            <td>Edinburgh</td>
-                                            <td>42</td>
-                                            <td>2010/12/22</td>
-                                            <td>$92,575</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jennifer Chang</td>
-                                            <td>Regional Director</td>
-                                            <td>Singapore</td>
-                                            <td>28</td>
-                                            <td>2010/11/14</td>
-                                            <td>$357,650</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Brenden Wagner</td>
-                                            <td>Software Engineer</td>
-                                            <td>San Francisco</td>
-                                            <td>28</td>
-                                            <td>2011/06/07</td>
-                                            <td>$206,850</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Fiona Green</td>
-                                            <td>Chief Operating Officer (COO)</td>
-                                            <td>San Francisco</td>
-                                            <td>48</td>
-                                            <td>2010/03/11</td>
-                                            <td>$850,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Shou Itou</td>
-                                            <td>Regional Marketing</td>
-                                            <td>Tokyo</td>
-                                            <td>20</td>
-                                            <td>2011/08/14</td>
-                                            <td>$163,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Michelle House</td>
-                                            <td>Integration Specialist</td>
-                                            <td>Sidney</td>
-                                            <td>37</td>
-                                            <td>2011/06/02</td>
-                                            <td>$95,400</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Suki Burks</td>
-                                            <td>Developer</td>
-                                            <td>London</td>
-                                            <td>53</td>
-                                            <td>2009/10/22</td>
-                                            <td>$114,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Prescott Bartlett</td>
-                                            <td>Technical Author</td>
-                                            <td>London</td>
-                                            <td>27</td>
-                                            <td>2011/05/07</td>
-                                            <td>$145,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Gavin Cortez</td>
-                                            <td>Team Leader</td>
-                                            <td>San Francisco</td>
-                                            <td>22</td>
-                                            <td>2008/10/26</td>
-                                            <td>$235,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Martena Mccray</td>
-                                            <td>Post-Sales support</td>
-                                            <td>Edinburgh</td>
-                                            <td>46</td>
-                                            <td>2011/03/09</td>
-                                            <td>$324,050</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Unity Butler</td>
-                                            <td>Marketing Designer</td>
-                                            <td>San Francisco</td>
-                                            <td>47</td>
-                                            <td>2009/12/09</td>
-                                            <td>$85,675</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Howard Hatfield</td>
-                                            <td>Office Manager</td>
-                                            <td>San Francisco</td>
-                                            <td>51</td>
-                                            <td>2008/12/16</td>
-                                            <td>$164,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Hope Fuentes</td>
-                                            <td>Secretary</td>
-                                            <td>San Francisco</td>
-                                            <td>41</td>
-                                            <td>2010/02/12</td>
-                                            <td>$109,850</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Vivian Harrell</td>
-                                            <td>Financial Controller</td>
-                                            <td>San Francisco</td>
-                                            <td>62</td>
-                                            <td>2009/02/14</td>
-                                            <td>$452,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Timothy Mooney</td>
-                                            <td>Office Manager</td>
-                                            <td>London</td>
-                                            <td>37</td>
-                                            <td>2008/12/11</td>
-                                            <td>$136,200</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jackson Bradshaw</td>
-                                            <td>Director</td>
-                                            <td>New York</td>
-                                            <td>65</td>
-                                            <td>2008/09/26</td>
-                                            <td>$645,750</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Olivia Liang</td>
-                                            <td>Support Engineer</td>
-                                            <td>Singapore</td>
-                                            <td>64</td>
-                                            <td>2011/02/03</td>
-                                            <td>$234,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Bruno Nash</td>
-                                            <td>Software Engineer</td>
-                                            <td>London</td>
-                                            <td>38</td>
-                                            <td>2011/05/03</td>
-                                            <td>$163,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sakura Yamamoto</td>
-                                            <td>Support Engineer</td>
-                                            <td>Tokyo</td>
-                                            <td>37</td>
-                                            <td>2009/08/19</td>
-                                            <td>$139,575</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Thor Walton</td>
-                                            <td>Developer</td>
-                                            <td>New York</td>
-                                            <td>61</td>
-                                            <td>2013/08/11</td>
-                                            <td>$98,540</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Finn Camacho</td>
-                                            <td>Support Engineer</td>
-                                            <td>San Francisco</td>
-                                            <td>47</td>
-                                            <td>2009/07/07</td>
-                                            <td>$87,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Serge Baldwin</td>
-                                            <td>Data Coordinator</td>
-                                            <td>Singapore</td>
-                                            <td>64</td>
-                                            <td>2012/04/09</td>
-                                            <td>$138,575</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Zenaida Frank</td>
-                                            <td>Software Engineer</td>
-                                            <td>New York</td>
-                                            <td>63</td>
-                                            <td>2010/01/04</td>
-                                            <td>$125,250</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Zorita Serrano</td>
-                                            <td>Software Engineer</td>
-                                            <td>San Francisco</td>
-                                            <td>56</td>
-                                            <td>2012/06/01</td>
-                                            <td>$115,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jennifer Acosta</td>
-                                            <td>Junior Javascript Developer</td>
-                                            <td>Edinburgh</td>
-                                            <td>43</td>
-                                            <td>2013/02/01</td>
-                                            <td>$75,650</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cara Stevens</td>
-                                            <td>Sales Assistant</td>
-                                            <td>New York</td>
-                                            <td>46</td>
-                                            <td>2011/12/06</td>
-                                            <td>$145,600</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Hermione Butler</td>
-                                            <td>Regional Director</td>
-                                            <td>London</td>
-                                            <td>47</td>
-                                            <td>2011/03/21</td>
-                                            <td>$356,250</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Lael Greer</td>
-                                            <td>Systems Administrator</td>
-                                            <td>London</td>
-                                            <td>21</td>
-                                            <td>2009/02/27</td>
-                                            <td>$103,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jonas Alexander</td>
-                                            <td>Developer</td>
-                                            <td>San Francisco</td>
-                                            <td>30</td>
-                                            <td>2010/07/14</td>
-                                            <td>$86,500</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Shad Decker</td>
-                                            <td>Regional Director</td>
-                                            <td>Edinburgh</td>
-                                            <td>51</td>
-                                            <td>2008/11/13</td>
-                                            <td>$183,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Michael Bruce</td>
-                                            <td>Javascript Developer</td>
-                                            <td>Singapore</td>
-                                            <td>29</td>
-                                            <td>2011/06/27</td>
-                                            <td>$183,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Donna Snider</td>
-                                            <td>Customer Support</td>
-                                            <td>New York</td>
-                                            <td>27</td>
-                                            <td>2011/01/25</td>
-                                            <td>$112,000</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-                <footer class="py-4 bg-light mt-auto">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                            <div>
-                                <a href="#">Privacy Policy</a>
-                                &middot;
-                                <a href="#">Terms &amp; Conditions</a>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+<main>
+    <div class="container-fluid px-4">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+            <h1 class="fw-bold text-dark">Dashboard Tổng Quan</h1>
+            <div class="text-muted small">
+                <i class="fas fa-clock me-1"></i> Cập nhật: <?= date('H:i d/m/Y') ?>
             </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
-<script src="<?= BASE_URL ?>views/js/scripts.js"></script>
+        <!-- Metric Cards Row -->
+        <div class="row g-4">
+            <!-- Doanh Thu Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-primary text-white h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-white-50 fw-bold text-uppercase">Tổng Doanh Thu</div>
+                                <div class="fs-4 fw-bold"><?= number_format($metrics['doanh_thu']) ?> ₫</div>
+                            </div>
+                            <i class="fas fa-sack-dollar fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chi Phí Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-warning text-white h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-white-50 fw-bold text-uppercase">Tổng Chi Phí</div>
+                                <div class="fs-4 fw-bold"><?= number_format($metrics['chi_phi']) ?> ₫</div>
+                            </div>
+                            <i class="fas fa-file-invoice-dollar fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lợi Nhuận Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-success text-white h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-white-50 fw-bold text-uppercase">Lợi Nhuận Ròng</div>
+                                <div class="fs-4 fw-bold"><?= number_format($metrics['loi_nhuan']) ?> ₫</div>
+                            </div>
+                            <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hoạt Động Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-danger text-white h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-white-50 fw-bold text-uppercase">Hoạt Động</div>
+                                <div class="fs-5 fw-bold"><?= $metrics['so_khach'] ?> Khách / <?= $metrics['so_tour'] ?> Tour</div>
+                            </div>
+                            <i class="fas fa-users fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Lists Row -->
+        <div class="row mt-4">
+            <!-- Chart Column -->
+            <div class="col-xl-5">
+                <div class="card mb-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="fas fa-chart-pie me-1 text-primary"></i> Tỷ lệ trạng thái Booking
+                    </div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <canvas id="bookingStatusChart" width="100%" height="50"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Bookings Column -->
+            <div class="col-xl-7">
+                <div class="card mb-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="fas fa-list me-1 text-success"></i> Booking Mới Nhất
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Khách hàng</th>
+                                        <th>Tour</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end">Tổng tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if(!empty($recentBookings)): foreach($recentBookings as $b): ?>
+                                    <tr>
+                                        <td>
+                                            <a href="index.php?act=booking-detail&id=<?= $b['id'] ?>" class="text-decoration-none fw-bold">
+                                                #<?= $b['id'] ?>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <?= htmlspecialchars($b['ten_khach'] ?? 'Khách lẻ') ?>
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;" title="<?= htmlspecialchars($b['ten_tour']) ?>">
+                                                <?= htmlspecialchars($b['ten_tour']) ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php 
+                                                $badgeColor = match($b['trang_thai']) {
+                                                    'CHO_XU_LY' => 'bg-warning text-dark',
+                                                    'DA_XAC_NHAN' => 'bg-info text-dark',
+                                                    'DA_THANH_TOAN' => 'bg-primary',
+                                                    'HOAN_THANH' => 'bg-success',
+                                                    'HUY' => 'bg-danger',
+                                                    default => 'bg-secondary'
+                                                };
+                                            ?>
+                                            <span class="badge <?= $badgeColor ?>"><?= $b['trang_thai'] ?></span>
+                                        </td>
+                                        <td class="text-end fw-bold text-primary">
+                                            <?= number_format($b['tong_tien']) ?> ₫
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; else: ?>
+                                        <tr><td colspan="5" class="text-center py-3 text-muted">Chưa có booking nào.</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Chart Script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+<script>
+    // Cấu hình và vẽ biểu đồ tròn
+    var ctx = document.getElementById("bookingStatusChart");
+    if (ctx) {
+        var myPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: <?= json_encode($pieLabels ?? []) ?>, // Dữ liệu từ PHP
+                datasets: [{
+                    data: <?= json_encode($pieData ?? []) ?>, // Dữ liệu từ PHP
+                    backgroundColor: <?= json_encode($pieColors ?? []) ?>, // Màu sắc từ PHP
+                }],
+            },
+            options: {
+                legend: {
+                    position: 'bottom'
+                },
+                cutoutPercentage: 60,
+            }
+        });
+    }
+</script>
 
-<script src="<?= BASE_URL ?>views/assets/demo/chart-area-demo.js"></script>
-<script src="<?= BASE_URL ?>views/assets/demo/chart-bar-demo.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-<script src="<?= BASE_URL ?>views/js/datatables-simple-demo.js"></script>
-    </body>
-</html>
+<?php require_once 'views/footer.php'; ?>

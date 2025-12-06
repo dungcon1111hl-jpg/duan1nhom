@@ -11,28 +11,49 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white fw-bold">1. Thông tin Chuyến đi</div>
                 <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Chọn Tour</label>
-                            <select name="tour_id" class="form-select" required>
-                                <?php foreach ($tours as $t): ?>
-                                    <option value="<?= $t['id'] ?>"><?= $t['ten_tour'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Khởi hành <span class="text-danger">*</span></label>
-                            <input type="datetime-local" name="ngay_khoi_hanh" id="startDate" class="form-control" required onchange="checkHDV()">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Kết thúc <span class="text-danger">*</span></label>
-                            <input type="datetime-local" name="ngay_ket_thuc" id="endDate" class="form-control" required onchange="checkHDV()">
-                        </div>
-                        
-                        </div>
-                </div>
-            </div>
+    <div class="row g-3">
+        <div class="col-md-12">
+            <label class="form-label fw-bold">Chọn Tour <span class="text-danger">*</span></label>
+            <select name="tour_id" class="form-select" required>
+                <?php foreach ($tours as $t): ?>
+                    <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['ten_tour']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Khởi hành <span class="text-danger">*</span></label>
+            <input type="datetime-local" name="ngay_khoi_hanh" id="startDate" class="form-control" required onchange="checkHDV()">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Kết thúc <span class="text-danger">*</span></label>
+            <input type="datetime-local" name="ngay_ket_thuc" id="endDate" class="form-control" required onchange="checkHDV()">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Điểm tập trung</label>
+            <input type="text" name="diem_tap_trung" class="form-control" placeholder="VD: Sân bay Tân Sơn Nhất" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Số chỗ tối đa</label>
+            <input type="number" name="so_cho_toi_da" class="form-control" value="20" min="1">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Giá người lớn (VNĐ)</label>
+            <input type="number" name="gia_nguoi_lon" class="form-control" placeholder="0" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Giá trẻ em (VNĐ)</label>
+            <input type="number" name="gia_tre_em" class="form-control" placeholder="0">
+        </div>
+        
+        <div class="col-12">
+            <label class="form-label fw-bold">Ghi chú</label>
+            <textarea name="ghi_chu" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+</div>
 
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-info text-white fw-bold">2. Phân Bổ Nhân Sự</div>

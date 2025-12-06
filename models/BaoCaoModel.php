@@ -6,48 +6,44 @@ class BaoCaoModel {
         $this->conn = $db;
     }
 
-    // Tính toán doanh thu, chi phí, lợi nhuận của 1 lịch khởi hành
-    public function getDoanhThuTheoLich($lichId) {
-        // 1. Tổng Doanh Thu (Từ bảng Booking)
-        // Chỉ tính các đơn đã xác nhận, đã thanh toán hoặc hoàn thành
-        $sqlThu = "SELECT 
-                        COUNT(id) as tong_so_don,
-                        SUM(so_luong_khach) as tong_khach,
-                        SUM(tong_tien) as doanh_thu 
-                   FROM booking 
-                   WHERE lich_id = :id 
-                   AND trang_thai IN ('DA_XAC_NHAN', 'DA_THANH_TOAN', 'HOAN_THANH')";
+    // Lấy thống kê tổng hợp theo khoảng thời gian
+    public function getThongKeTongHop($fromDate, $toDate) {
+        // SQL này sẽ tính tổng Doanh thu, Chi phí DV, Chi phí Khác cho từng Lịch khởi hành
+        $sql = "SELECT 
+                    l.id as lich_id,
+                    l.ngay_khoi_hanh,
+                    l.ngay_ket_thuc,
+                    t.ten_tour,
+                    t.ma_tour,
+                    
+                    -- 1. Tính Tổng Doanh Thu (Booking đã xác nhận/thanh toán)
+                    (SELECT COALESCE(SUM(tong_tien), 0) 
+                     FROM booking 
+                     WHERE lich_id = l.id 
+                     AND trang_thai IN ('DA_XAC_NHAN', 'DA_THANH_TOAN', 'HOAN_THANH')) as tong_doanh_thu,
+
+                    -- 2. Tính Chi phí Dịch vụ (Trả NCC)
+                    (SELECT COALESCE(SUM(thanh_tien), 0) 
+                     FROM phan_bo_dich_vu 
+                     WHERE lich_id = l.id) as tong_chi_phi_ncc,
+
+                    -- 3. Tính Chi phí Phát sinh (Cầu đường, ăn uống...)
+                    (SELECT COALESCE(SUM(so_tien), 0) 
+                     FROM chi_phi_khac 
+                     WHERE lich_id = l.id) as tong_chi_phi_khac
+
+                FROM lich_khoi_hanh l
+                JOIN tour t ON l.tour_id = t.id
+                WHERE l.ngay_khoi_hanh BETWEEN :tu_ngay AND :den_ngay
+                ORDER BY l.ngay_khoi_hanh DESC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':tu_ngay' => $fromDate,
+            ':den_ngay' => $toDate
+        ]);
         
-        $stmtThu = $this->conn->prepare($sqlThu);
-        $stmtThu->execute([':id' => $lichId]);
-        $thu = $stmtThu->fetch(PDO::FETCH_ASSOC);
-
-        // 2. Tổng Chi Phí (Từ bảng Chi Phí Lịch)
-        $chi_phi = 0;
-        try {
-            // Kiểm tra xem bảng chi_phi_lich có tồn tại không trước khi query (để tránh lỗi nếu chưa tạo bảng)
-            $checkTable = $this->conn->query("SHOW TABLES LIKE 'chi_phi_lich'")->rowCount();
-            
-            if ($checkTable > 0) {
-                $sqlChi = "SELECT SUM(chi_phi_thuc_te) as tong_chi 
-                           FROM chi_phi_lich 
-                           WHERE lich_id = :id";
-                $stmtChi = $this->conn->prepare($sqlChi);
-                $stmtChi->execute([':id' => $lichId]);
-                $resultChi = $stmtChi->fetch(PDO::FETCH_ASSOC);
-                $chi_phi = $resultChi['tong_chi'] ?? 0;
-            }
-        } catch (Exception $e) {
-            $chi_phi = 0; 
-        }
-
-        return [
-            'so_don'    => $thu['tong_so_don'] ?? 0,
-            'so_khach'  => $thu['tong_khach'] ?? 0,
-            'doanh_thu' => $thu['doanh_thu'] ?? 0,
-            'chi_phi'   => $chi_phi,
-            'loi_nhuan' => ($thu['doanh_thu'] ?? 0) - $chi_phi
-        ];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

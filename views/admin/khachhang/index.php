@@ -80,15 +80,23 @@
                                             
                                             <td class="text-center">
                                                 <?php 
-                                                    $gender = $kh['gioi_tinh'];
-                                                    if ($gender === null || $gender === '') {
-                                                        echo '<span class="badge bg-secondary">---</span>';
-                                                    } elseif ($gender == 1) {
-                                                        echo '<span class="badge bg-info text-dark"><i class="fas fa-mars me-1"></i> Nam</span>';
-                                                    } else { 
-                                                        echo '<span class="badge bg-danger bg-opacity-75"><i class="fas fa-venus me-1"></i> Nữ</span>';
-                                                    }
-                                                ?>
+    $gender = $kh['gioi_tinh'];  // Lấy giá trị giới tính từ cơ sở dữ liệu
+
+if ($gender === null || $gender === '') {
+    // Trường hợp không có thông tin giới tính (NULL hoặc rỗng)
+    echo '<span class="badge bg-secondary">---</span>';
+} elseif ($gender === 'NAM') {
+    // Trường hợp giới tính Nam (nếu giá trị là 'NAM')
+    echo '<span class="badge bg-info text-dark"><i class="fas fa-mars me-1"></i> Nam</span>';
+} elseif ($gender === 'NU') {
+    // Trường hợp giới tính Nữ (nếu giá trị là 'NU')
+    echo '<span class="badge bg-danger bg-opacity-75"><i class="fas fa-venus me-1"></i> Nữ</span>';
+} else {
+    // Trường hợp giới tính không xác định (có thể là 'KHAC' hoặc giá trị khác)
+    echo '<span class="badge bg-warning text-dark">Giới tính không xác định</span>';
+}
+
+?>
                                             </td>
                                             
                                             <td class="text-center">

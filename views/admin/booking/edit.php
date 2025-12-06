@@ -85,15 +85,22 @@
                             </div>
                             <input type="hidden" name="tong_tien" id="input_tong_tien" value="<?= $booking['tong_tien'] ?>">
                         </div>
+                        
                         <div class="col-md-4 border-end">
                             <label class="small text-muted fw-bold">ĐÃ THANH TOÁN</label>
                             <div class="input-group mt-1 px-3">
                                 <input type="text" name="da_thanh_toan" id="input_da_thanh_toan" 
-                                       class="form-control text-center fw-bold text-success"
+                                       class="form-control text-center fw-bold text-success bg-light"
                                        value="<?= (int)$booking['da_thanh_toan'] ?>" 
-                                       oninput="updateRemaining()">
+                                       readonly>
+                            </div>
+                            <div class="form-text small mt-2">
+                                <a href="index.php?act=thanhtoan-list&booking_id=<?= $booking['id'] ?>" class="text-decoration-none fw-bold">
+                                    <i class="fas fa-external-link-alt me-1"></i> Quản lý thu/chi tại đây
+                                </a>
                             </div>
                         </div>
+
                         <div class="col-md-4">
                             <label class="small text-muted fw-bold">CÒN LẠI</label>
                             <div class="fs-4 fw-bold text-danger" id="display_con_lai">
@@ -135,8 +142,12 @@
 
     function updateRemaining() {
         let total = parseFloat(document.getElementById('input_tong_tien').value) || 0;
+        
+        // Lấy giá trị từ ô readonly (vẫn cần replace để phòng trường hợp định dạng số)
         let paid = parseFloat(document.getElementById('input_da_thanh_toan').value.replace(/[^0-9]/g, '')) || 0;
-        document.getElementById('display_con_lai').innerText = formatCurrency(total - paid);
+        
+        let remaining = total - paid;
+        document.getElementById('display_con_lai').innerText = formatCurrency(remaining);
     }
 </script>
 

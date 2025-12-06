@@ -9,28 +9,49 @@
                 </div>
                 <div class="card-body">
                     
-                    <div class="alert alert-info d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Mã Booking: #<?= $booking['id'] ?></strong><br>
-                            Khách: <?= htmlspecialchars($booking['ten_khach'] ?? $booking['ho_ten']) ?>
-                        </div>
-                        <div class="text-end">
-                            <small>Còn thiếu:</small><br>
-                            <strong class="text-danger fs-5">
-                                <?= number_format($booking['tong_tien'] - $booking['da_thanh_toan']) ?> ₫
-                            </strong>
-                        </div>
-                    </div>
-
                     <form action="index.php?act=thanhtoan-store" method="POST">
-                        <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                        
+                        <?php if (!empty($booking)): ?>
+                            <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                            <div class="alert alert-info mb-3">
+                                <div><strong>Booking #<?= $booking['id'] ?></strong> - <?= htmlspecialchars($booking['snapshot_kh_ho_ten'] ?? 'N/A') ?></div>
+                                <div class="mt-1">
+                                    Tổng tiền: <strong><?= number_format($booking['tong_tien']) ?> ₫</strong> 
+                                    <span class="mx-2">|</span> 
+                                    Đã thanh toán: <strong><?= number_format($booking['da_thanh_toan']) ?> ₫</strong>
+                                </div>
+                                <div class="mt-2 text-danger fw-bold border-top pt-2">
+                                    Cần thu: <?= number_format($booking['tong_tien'] - $booking['da_thanh_toan']) ?> ₫
+                                </div>
+                            </div>
+                            <?php $goi_y_tien = $booking['tong_tien'] - $booking['da_thanh_toan']; ?>
+
+                        <?php else: ?>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Chọn Booking cần thu tiền <span class="text-danger">*</span></label>
+                                <select name="booking_id" class="form-select" required id="selectBooking" onchange="updateDebt(this)">
+                                    <option value="">-- Chọn khách hàng / Tour --</option>
+                                    <?php if(!empty($dsBooking)): foreach($dsBooking as $b): 
+                                        $con_thieu = $b['tong_tien'] - $b['da_thanh_toan'];
+                                        if($con_thieu <= 0) continue; // Ẩn những đơn đã thanh toán đủ
+                                    ?>
+                                        <option value="<?= $b['id'] ?>" data-debt="<?= $con_thieu ?>">
+                                            #<?= $b['id'] ?> - <?= htmlspecialchars($b['snapshot_kh_ho_ten']) ?> 
+                                            (Thiếu: <?= number_format($con_thieu) ?> ₫)
+                                        </option>
+                                    <?php endforeach; endif; ?>
+                                </select>
+                            </div>
+                            <?php $goi_y_tien = 0; ?>
+                        <?php endif; ?>
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Số tiền thu (VNĐ) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" name="so_tien" class="form-control fw-bold text-success fs-4" 
+                                <input type="number" name="so_tien" id="inputMoney" 
+                                       class="form-control fw-bold text-success fs-4" 
                                        placeholder="0" required min="1000"
-                                       value="<?= $booking['tong_tien'] - $booking['da_thanh_toan'] ?>">
+                                       value="<?= $goi_y_tien > 0 ? $goi_y_tien : '' ?>">
                                 <span class="input-group-text">₫</span>
                             </div>
                         </div>
@@ -52,7 +73,7 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success fw-bold py-2">LƯU PHIẾU THU</button>
-                            <a href="index.php?act=thanhtoan-list&booking_id=<?= $booking['id'] ?>" class="btn btn-secondary">Hủy bỏ</a>
+                            <a href="index.php?act=thanhtoan-list" class="btn btn-secondary">Hủy bỏ</a>
                         </div>
                     </form>
                 </div>
@@ -60,4 +81,16 @@
         </div>
     </div>
 </main>
+
+<script>
+// Tự động điền số tiền khi chọn booking ở Dropdown
+function updateDebt(select) {
+    var option = select.options[select.selectedIndex];
+    var debt = option.getAttribute('data-debt');
+    if (debt) {
+        document.getElementById('inputMoney').value = debt;
+    }
+}
+</script>
+
 <?php require_once PATH_ROOT . '/views/footer.php'; ?>

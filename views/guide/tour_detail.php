@@ -2,179 +2,213 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết Tour - HDV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Điều hành Tour</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .nav-pills .nav-link.active { background-color: #198754; }
-        .nav-pills .nav-link { color: #198754; }
-        .sticky-tabs { position: sticky; top: 56px; z-index: 99; background: #f0f2f5; padding-top: 10px; }
-        .passenger-item { background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-left: 5px solid #ccc; }
-        .passenger-item.checked-in { border-left-color: #198754; background: #e8f5e9; }
+        /* Mobile Optimization */
+        .sticky-nav { position: sticky; top: 0; z-index: 1000; background: white; padding-top: 10px; border-bottom: 1px solid #eee; }
+        .nav-pills .nav-link { border-radius: 20px; font-weight: 500; color: #6c757d; }
+        .nav-pills .nav-link.active { background-color: #198754; color: white; }
+        .passenger-card { border-left: 4px solid #dee2e6; transition: 0.3s; }
+        .passenger-card.checked { border-left-color: #198754; background-color: #f1f8f5; }
+        .btn-checkin { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .special-note { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 6px; font-size: 0.85rem; margin-top: 8px; display: inline-block; }
     </style>
 </head>
-<body style="background-color: #f0f2f5; padding-bottom: 60px;">
+<body class="bg-light" style="padding-bottom: 80px;">
 
-    <nav class="navbar navbar-dark bg-success sticky-top">
-        <div class="container-fluid">
-            <a href="index.php?act=guide-dashboard" class="text-white text-decoration-none"><i class="fas fa-arrow-left me-2"></i>Trở về</a>
-            <span class="navbar-brand mb-0 h1 fs-6 text-truncate" style="max-width: 200px;"><?= $tour['ten_tour'] ?></span>
-            <div></div>
-        </div>
-    </nav>
-
-    <div class="container mt-2">
-        <ul class="nav nav-pills nav-fill sticky-tabs shadow-sm bg-white rounded mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#schedule">Lịch trình</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#guests">Khách</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#diary">Nhật ký</button></li>
-        </ul>
-
-        <div class="tab-content" id="pills-tabContent">
-            
-            <div class="tab-pane fade show active" id="schedule">
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-success"><i class="fas fa-info-circle me-1"></i> Thông tin chung</h6>
-                        <p class="small mb-1">Mã Tour: <strong><?= $tour['ma_tour'] ?></strong></p>
-                        <p class="small mb-1">Điểm đón: <?= $tour['diem_tap_trung'] ?></p>
-                        <p class="small mb-0">Giờ đi: <?= date('H:i d/m/Y', strtotime($tour['ngay_khoi_hanh'])) ?></p>
-                    </div>
-                </div>
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-primary mb-3">Lịch trình chi tiết</h6>
-                        <div class="small">
-                            <?= nl2br($tour['lich_trinh_mau']) ?>
-                        </div>
-                    </div>
-                </div>
+    <div class="bg-success text-white p-3 shadow-sm">
+        <div class="d-flex align-items-center">
+            <a href="index.php?act=guide-dashboard" class="text-white me-3"><i class="fas fa-arrow-left fa-lg"></i></a>
+            <div class="text-truncate">
+                <h6 class="mb-0 fw-bold"><?= htmlspecialchars($tour['ten_tour']) ?></h6>
+                <small class="opacity-75"><i class="fas fa-map-marker-alt"></i> <?= $tour['diem_tap_trung'] ?></small>
             </div>
+        </div>
+    </div>
 
-            <div class="tab-pane fade" id="guests">
-                <div class="d-flex justify-content-between mb-2 px-2">
-                    <span class="fw-bold">Tổng: <?= count($passengers) ?> khách</span>
-                    <span class="text-success"><i class="fas fa-check-circle"></i> Đã đến: <?= array_sum(array_column($passengers, 'trang_thai_checkin')) ?></span>
+    <div class="container px-0">
+        <div class="sticky-nav px-3 pb-2 shadow-sm">
+            <ul class="nav nav-pills nav-fill" id="pills-tab" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-guests">Danh sách khách</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-schedule">Lịch trình</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-diary">Nhật ký</button></li>
+            </ul>
+        </div>
+
+        <div class="tab-content px-3 pt-3">
+            
+            <div class="tab-pane fade show active" id="tab-guests">
+                <div class="mb-3">
+                    <input type="text" id="searchGuest" class="form-control rounded-pill" placeholder="🔍 Tìm tên hoặc SĐT khách...">
                 </div>
 
-                <?php foreach($passengers as $p): ?>
-                <div class="passenger-item shadow-sm <?= $p['trang_thai_checkin'] ? 'checked-in' : '' ?>" data-bs-toggle="modal" data-bs-target="#modalGuest<?= $p['id'] ?>">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($p['ho_ten']) ?></h6>
-                            <small class="text-muted"><?= $p['loai_khach'] ?> | <?= $p['gioi_tinh'] ?></small>
-                            <?php if($p['ghi_chu_dac_biet']): ?>
-                                <div class="text-danger small mt-1"><i class="fas fa-exclamation-triangle"></i> <?= $p['ghi_chu_dac_biet'] ?></div>
-                            <?php endif; ?>
+                <div id="guestList">
+                    <?php foreach($passengers as $p): ?>
+                    <div class="card mb-2 border-0 shadow-sm passenger-card <?= $p['checked_in'] ? 'checked' : '' ?> guest-item">
+                        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                            <div class="flex-grow-1" data-bs-toggle="collapse" href="#note-<?= $p['id'] ?>">
+                                <h6 class="fw-bold mb-0 guest-name"><?= htmlspecialchars($p['ho_ten']) ?></h6>
+                                <small class="text-muted"><i class="fas fa-phone-alt"></i> <?= $p['so_dien_thoai'] ?></small>
+                                <?php if(!empty($p['yeu_cau_dac_biet'])): ?>
+                                    <div class="special-note"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($p['yeu_cau_dac_biet']) ?></div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <button class="btn btn-checkin <?= $p['checked_in'] ? 'btn-success' : 'btn-outline-secondary' ?>" 
+                                    onclick="gpsCheckIn(<?= $p['id'] ?>, <?= $tour['id'] ?>, this)">
+                                <i class="fas <?= $p['checked_in'] ? 'fa-check' : 'fa-qrcode' ?>"></i>
+                            </button>
                         </div>
-                        <div class="text-end">
-                            <i class="fas fa-chevron-right text-muted"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="modalGuest<?= $p['id'] ?>" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <form action="index.php?act=guide-update-guest" method="POST">
+                        
+                        <div class="collapse px-3 pb-3" id="note-<?= $p['id'] ?>">
+                            <form action="index.php?act=guide-update-note" method="POST" class="mt-2 border-top pt-2">
                                 <input type="hidden" name="passenger_id" value="<?= $p['id'] ?>">
                                 <input type="hidden" name="lich_id" value="<?= $tour['id'] ?>">
-                                <div class="modal-header">
-                                    <h5 class="modal-title"><?= htmlspecialchars($p['ho_ten']) ?></h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p><strong>SĐT liên hệ:</strong> <a href="tel:<?= $p['sdt_lien_he'] ?>"><?= $p['sdt_lien_he'] ?></a></p>
-                                    
-                                    <div class="form-check form-switch mb-3 p-3 bg-light rounded">
-                                        <input class="form-check-input" type="checkbox" name="checkin" id="check<?= $p['id'] ?>" <?= $p['trang_thai_checkin'] ? 'checked' : '' ?>>
-                                        <label class="form-check-label fw-bold" for="check<?= $p['id'] ?>">Đã có mặt (Check-in)</label>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Yêu cầu đặc biệt (Ăn chay, dị ứng...)</label>
-                                        <textarea name="note" class="form-control" rows="3"><?= $p['ghi_chu_dac_biet'] ?></textarea>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-primary w-100">Cập nhật</button>
+                                <label class="small fw-bold text-secondary">Cập nhật yêu cầu đặc biệt:</label>
+                                <div class="input-group">
+                                    <input type="text" name="note" class="form-control form-control-sm" value="<?= htmlspecialchars($p['yeu_cau_dac_biet']) ?>">
+                                    <button class="btn btn-sm btn-primary">Lưu</button>
                                 </div>
                             </form>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
 
-            <div class="tab-pane fade" id="diary">
-                <button class="btn btn-danger w-100 mb-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDiary">
+            <div class="tab-pane fade" id="tab-schedule">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <?= nl2br($tour['lich_trinh_mau'] ?? 'Đang cập nhật lịch trình...') ?>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-diary">
+                <button class="btn btn-danger w-100 mb-3 shadow fw-bold" data-bs-toggle="modal" data-bs-target="#modalDiary">
                     <i class="fas fa-pen-nib me-2"></i> Viết Nhật Ký / Báo Sự Cố
                 </button>
 
                 <?php if(empty($diaries)): ?>
-                    <p class="text-center text-muted">Chưa có nhật ký nào.</p>
-                <?php else: foreach($diaries as $d): ?>
+                    <p class="text-center text-muted small">Chưa có nhật ký nào.</p>
+                <?php else: foreach($diaries as $log): ?>
                     <div class="card mb-3 border-0 shadow-sm">
-                        <div class="card-body">
+                        <div class="card-body p-3">
                             <div class="d-flex justify-content-between">
-                                <h6 class="fw-bold mb-1 <?= $d['loai_nhat_ky'] == 'SU_CO' ? 'text-danger' : 'text-primary' ?>">
-                                    <?= $d['loai_nhat_ky'] == 'SU_CO' ? '<i class="fas fa-exclamation-circle"></i> SỰ CỐ' : 'NHẬT KÝ' ?>: 
-                                    <?= htmlspecialchars($d['tieu_de']) ?>
-                                </h6>
-                                <small class="text-muted"><?= date('H:i d/m', strtotime($d['ngay_ghi'])) ?></small>
+                                <span class="badge bg-<?= $log['loai_nhat_ky']=='SU_CO'?'danger':'info' ?> mb-2"><?= $log['loai_nhat_ky'] ?></span>
+                                <small class="text-muted"><?= date('H:i d/m', strtotime($log['ngay_ghi'])) ?></small>
                             </div>
-                            <p class="card-text small text-secondary mt-2"><?= nl2br(htmlspecialchars($d['noi_dung'])) ?></p>
-                            <?php if($d['hinh_anh']): ?>
-                                <img src="<?= BASE_URL . $d['hinh_anh'] ?>" class="img-fluid rounded mt-2">
+                            <h6 class="fw-bold"><?= htmlspecialchars($log['tieu_de']) ?></h6>
+                            <p class="small text-secondary mb-0"><?= nl2br(htmlspecialchars($log['noi_dung'])) ?></p>
+                            <?php if($log['hinh_anh']): ?>
+                                <img src="<?= BASE_URL . $log['hinh_anh'] ?>" class="img-fluid rounded mt-2 border">
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; endif; ?>
-
-                <div class="modal fade" id="modalDiary" tabindex="-1">
-                    <div class="modal-dialog modal-fullscreen-sm-down">
-                        <div class="modal-content">
-                            <form action="index.php?act=guide-store-diary" method="POST" enctype="multipart/form-data">
-                                <input type="hidden" name="lich_id" value="<?= $tour['id'] ?>">
-                                <div class="modal-header bg-dark text-white">
-                                    <h5 class="modal-title">Ghi Nhật Ký Tour</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label class="form-label">Loại tin</label>
-                                        <select name="loai_nhat_ky" class="form-select">
-                                            <option value="THONG_THUONG">Nhật ký thông thường</option>
-                                            <option value="SU_CO">Báo cáo Sự cố / Khẩn cấp</option>
-                                            <option value="PHAN_HOI">Phản hồi của khách</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Tiêu đề</label>
-                                        <input type="text" name="tieu_de" class="form-control" required placeholder="VD: Khách đến trễ, Xe hỏng...">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Nội dung chi tiết</label>
-                                        <textarea name="noi_dung" class="form-control" rows="4" required></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Hình ảnh (nếu có)</label>
-                                        <input type="file" name="hinh_anh" class="form-control" accept="image/*">
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-primary w-100">Gửi Báo Cáo</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
             </div>
-
         </div>
     </div>
-    
+
+    <div class="modal fade" id="modalDiary" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <form action="index.php?act=guide-store-diary" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="lich_id" value="<?= $tour['id'] ?>">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title">Ghi Nhật Ký</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Loại tin</label>
+                            <select name="loai_nhat_ky" class="form-select">
+                                <option value="THONG_THUONG">Thông thường</option>
+                                <option value="SU_CO">⚠️ Sự cố khẩn cấp</option>
+                                <option value="PHAN_HOI">💬 Phản hồi khách</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="tieu_de" class="form-control" placeholder="Tiêu đề..." required>
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="noi_dung" class="form-control" rows="4" placeholder="Nội dung chi tiết..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Hình ảnh/Video minh chứng</label>
+                            <input type="file" name="hinh_anh" class="form-control" accept="image/*,video/*">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Gửi Báo Cáo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 1. TÌM KIẾM KHÁCH HÀNG ---
+        document.getElementById('searchGuest').addEventListener('keyup', function() {
+            let val = this.value.toLowerCase();
+            document.querySelectorAll('.guest-item').forEach(el => {
+                let name = el.querySelector('.guest-name').innerText.toLowerCase();
+                el.style.display = name.includes(val) ? 'block' : 'none';
+            });
+        });
+
+        // --- 2. GPS CHECK-IN LOGIC ---
+        function gpsCheckIn(passengerId, tourId, btn) {
+            if (!confirm("Xác nhận Check-in cho khách này?")) return;
+
+            // Loading state
+            let originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            // Hàm gửi dữ liệu
+            const sendData = (lat, long) => {
+                fetch('index.php?act=api-checkin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ passenger_id: passengerId, status: 1, lat: lat, long: long })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.className = 'btn btn-checkin btn-success';
+                        btn.innerHTML = '<i class="fas fa-check"></i>';
+                        btn.closest('.passenger-card').classList.add('checked');
+                    } else {
+                        alert('Lỗi: ' + data.msg);
+                        btn.innerHTML = originalContent;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                });
+            };
+
+            // Lấy tọa độ GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendData(pos.coords.latitude, pos.coords.longitude),
+                    (err) => {
+                        console.warn("GPS Error:", err.message);
+                        sendData(null, null); // Không lấy được GPS vẫn cho check-in
+                    }
+                );
+            } else {
+                sendData(null, null);
+            }
+        }
+    </script>
 </body>
 </html>

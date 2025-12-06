@@ -41,13 +41,13 @@ class TourModel {
     }
 
     // [CẬP NHẬT] store: Thêm hdv_id vào câu lệnh INSERT
-    public function store(array $data): bool {
+    public function store(array $data): int|bool {
         $sql = "INSERT INTO tour (
             ma_tour, ten_tour, loai_tour, loai_tour_nang_cao, doi_tuong_khach, mo_ta_ngan,
             dia_diem_bat_dau, diem_trung_chuyen, dia_diem_ket_thuc,
             ngay_khoi_hanh, ngay_ket_thuc,
             gia_tour, gia_nguoi_lon, gia_tre_em, gia_em_be, phu_thu,
-            mo_ta_chi_tiet, hdv_id, anh_minh_hoa, -- Thay thong_tin_hdv bằng hdv_id
+            mo_ta_chi_tiet, hdv_id, anh_minh_hoa, 
             so_luong_ve, so_khach_toithieu, so_ve_con_lai,
             trang_thai, chinh_sach, ngay_tao
         ) VALUES (
@@ -63,8 +63,11 @@ class TourModel {
         $stmt = $this->db->prepare($sql);
         if ($stmt->execute($this->buildData($data))) {
             $newId = $this->db->lastInsertId();
-            if (!empty($data['ncc'])) $this->saveTourNCC($newId, $data['ncc']);
-            return true;
+            if (!empty($data['ncc'])) {
+                // SỬA: Đổi tên saveTourNCC thành updateTourNCC hoặc thêm phương thức public
+                $this->updateTourNCC((int)$newId, $data['ncc']); 
+            }
+            return (int)$newId;
         }
         return false;
     }
@@ -78,7 +81,7 @@ class TourModel {
             dia_diem_bat_dau = :dia_bd, diem_trung_chuyen = :dia_tg, dia_diem_ket_thuc = :dia_kt,
             ngay_khoi_hanh = :ngay_bd, ngay_ket_thuc = :ngay_kt,
             gia_tour = :gia_tour, gia_nguoi_lon = :gia_nl, gia_tre_em = :gia_te, gia_em_be = :gia_eb, phu_thu = :phu_thu,
-            mo_ta_chi_tiet = :mo_ta_ct, hdv_id = :hdv_id, -- Cập nhật hdv_id
+            mo_ta_chi_tiet = :mo_ta_ct, hdv_id = :hdv_id, 
             anh_minh_hoa = :anh,
             so_luong_ve = :sl_ve, so_khach_toithieu = :sl_min, so_ve_con_lai = :sl_con,
             trang_thai = :trang_thai, chinh_sach = :chinh_sach, ngay_cap_nhat = NOW()
@@ -89,42 +92,54 @@ class TourModel {
 
         $stmt = $this->db->prepare($sql);
         if ($stmt->execute($params)) {
-            $this->saveTourNCC($id, $data['ncc'] ?? []);
+            // SỬA: Đổi tên saveTourNCC thành updateTourNCC
+            $this->updateTourNCC($id, $data['ncc'] ?? []);
             return true;
         }
         return false;
     }
 
-    // Các hàm getById, getAll, softDelete, getSelectedNCC, saveTourNCC GIỮ NGUYÊN
+    // Các hàm getById, getAll, softDelete, getSelectedNCC GIỮ NGUYÊN
     public function getById(int $id) {
         $stmt = $this->db->prepare("SELECT * FROM tour WHERE id = :id");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
     public function getAll(array $filters = []): PDOStatement {
         $sql = "SELECT * FROM tour WHERE 1=1";
         if (!empty($filters['ten_tour'])) {
             $sql .= " AND (ten_tour LIKE '%" . $filters['ten_tour'] . "%' OR ma_tour LIKE '%" . $filters['ten_tour'] . "%')";
         }
-        // ...
+        // Có thể thêm các filter khác ở đây
         $sql .= " ORDER BY id DESC";
         return $this->db->query($sql);
     }
+    
     public function softDelete(int $id) {
         $stmt = $this->db->prepare("UPDATE tour SET trang_thai = 'NGUNG_HOAT_DONG' WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
+    
     public function getSelectedNCC(int $tour_id) {
         $stmt = $this->db->prepare("SELECT ncc_id FROM tour_ncc WHERE tour_id = :id");
         $stmt->execute([':id' => $tour_id]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
-    private function saveTourNCC(int $tour_id, array $ncc_ids) {
+
+    // [FIX] Thêm phương thức updateTourNCC (công khai) để Controller gọi được
+    public function updateTourNCC(int $tour_id, array $ncc_ids) {
+        // 1. Xóa các liên kết cũ
         $stmt = $this->db->prepare("DELETE FROM tour_ncc WHERE tour_id = :id");
         $stmt->execute([':id' => $tour_id]);
+        
+        // 2. Thêm các liên kết mới
         if (!empty($ncc_ids)) {
             $ins = $this->db->prepare("INSERT INTO tour_ncc (tour_id, ncc_id) VALUES (:tid, :nid)");
-            foreach ($ncc_ids as $nid) $ins->execute([':tid' => $tour_id, ':nid' => $nid]);
+            foreach ($ncc_ids as $nid) {
+                // Đảm bảo nid là số nguyên để tránh lỗi
+                $ins->execute([':tid' => $tour_id, ':nid' => (int)$nid]);
+            }
         }
     }
 }

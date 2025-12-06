@@ -1,240 +1,178 @@
 <?php
+// Kiểm tra xem class đã tồn tại chưa trước khi khai báo
+if (!class_exists('BookingController')) {
 
-// === REQUIRE CÁC MODEL ===
-require_once './models/BookingModel.php';
-require_once './models/TourModel.php';
-require_once './models/KhachHangModel.php';
-require_once './models/KhachThamGiaModel.php';
-require_once './models/ThanhToanModel.php';
+    class BookingController {
+        private $db;
+        private $model;
+        private $tourModel;
+        private $khachModel;
+        private $khachThamGiaModel;
 
-class BookingController {
-    private $bookingModel;
-    private $tourModel;
-    private $khachHangModel;
-    private $khachThamGiaModel;
-    private $thanhToanModel;
-
-    public function __construct() {
-        $db = connectDB(); 
-
-        $this->bookingModel      = new BookingModel();
-        $this->khachThamGiaModel = new KhachThamGiaModel();
-        $this->tourModel         = new TourModel($db);
-        $this->khachHangModel    = new KhachHangModel($db);
-        $this->thanhToanModel    = new ThanhToanModel($db);
-    }
-
-    // --- HÀM PHỤ TRỢ: Chuyển đổi tiền tệ về số chuẩn ---
-    // Giúp xử lý các trường hợp giá lưu là "1.000.000" hoặc "1,000,000"
-    private function toNumber($str) {
-        if (is_numeric($str)) return (float)$str;
-        // Xóa tất cả ký tự không phải số và dấu chấm thập phân (nếu cần)
-        // Ở đây ta xóa dấu chấm, phẩy, khoảng trắng, chữ đ
-        return (float)str_replace(['.', ',', 'đ', 'VNĐ', ' '], '', $str);
-    }
-
-    public function index() {
-        $bookings = $this->bookingModel->getAll();
-        require_once 'views/admin/booking/index.php';
-    }
-
-    public function create() {
-        $toursStmt = $this->tourModel->getAll([]); 
-        $tours = $toursStmt->fetchAll(PDO::FETCH_ASSOC);
-        $customers = $this->khachHangModel->getAll();
-        require_once 'views/admin/booking/create.php';
-    }
-
-    // 3. XỬ LÝ LƯU BOOKING
-    public function store() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        public function __construct($db) {
+            $this->db = $db;
             
-            $tour_id = $_POST['tour_id'] ?? null;
-            $khach_hang_id = $_POST['khach_hang_id'] ?? null;
-            $so_luong_nguoi_lon = max(1, (int)($_POST['so_luong_nguoi_lon'] ?? 1));
-            $so_luong_tre_em = (int)($_POST['so_luong_tre_em'] ?? 0);
+            // Khởi tạo các Model cần thiết
+            // (Đảm bảo các file model này đã được nạp ở index.php)
+            $this->model = new BookingModel($db);
+            $this->tourModel = new TourModel($db);
+            $this->khachModel = new KhachHangModel($db);
             
-            $loai_booking = $_POST['loai_booking'] ?? 'DOAN';
-            $trang_thai = $_POST['trang_thai'] ?? 'CHO_XU_LY';
+            // Kiểm tra model phụ nếu có
+            if(class_exists('KhachThamGiaModel')) {
+                $this->khachThamGiaModel = new KhachThamGiaModel($db);
+            }
+        }
 
-            // Xử lý tiền từ form (ưu tiên)
-            $tong_tien = $this->toNumber($_POST['tong_tien'] ?? 0);
-            $da_thanh_toan = $this->toNumber($_POST['da_thanh_toan'] ?? 0);
+        // 1. Danh sách
+        public function index() {
+            $bookings = $this->model->getAll();
+            require ROOT . "/views/admin/booking/index.php";
+        }
 
-            // Fallback: Nếu tổng tiền = 0 (do lỗi JS hoặc ko nhập), server tự tính
-            if ($tong_tien <= 0 && $tour_id) {
-                $tour = $this->tourModel->getById($tour_id);
-                if ($tour) {
-                    // Dùng hàm toNumber để đảm bảo giá lấy từ DB là số chuẩn
-                    $gia_nl = $this->toNumber($tour['gia_nguoi_lon']);
-                    $gia_te = $this->toNumber($tour['gia_tre_em']);
-                    $gia_tour = $this->toNumber($tour['gia_tour']);
+        // 2. Chi tiết
+        public function detail() {
+            $id = $_GET['id'] ?? 0;
+            $booking = $this->model->getOne($id);
+            if (!$booking) die("Đơn hàng không tồn tại");
 
-                    // Logic giá
-                    if ($gia_nl <= 0) $gia_nl = $gia_tour; 
-                    if ($gia_te <= 0) $gia_te = round($gia_nl * 0.7); // 70% nếu ko có giá trẻ em
+            $list_khach = [];
+            if($this->khachThamGiaModel) {
+                $list_khach = $this->khachThamGiaModel->getByBookingId($id);
+            }
+            
+            require ROOT . "/views/admin/booking/detail.php";
+        }
 
-                    $tong_tien = ($gia_nl * $so_luong_nguoi_lon) + ($gia_te * $so_luong_tre_em);
+        // 3. Form Tạo mới
+        public function create() {
+            $khachhangs = $this->khachModel->getAll(); 
+            $tours = $this->tourModel->getAll(); 
+            require ROOT . "/views/admin/booking/create.php";
+        }
+
+        // 4. Lưu mới (Store)
+        public function store() {
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                
+                // 1. Lấy thông tin Tour từ DB
+                $tourId = $_POST['tour_id'];
+                $tourInfo = $this->tourModel->getById($tourId);
+                $giaTour = $tourInfo['gia_tour'] ?? 0;
+
+                // 2. Xử lý Snapshot Tên Tour (Tránh lỗi NULL)
+                $tenTourSnapshot = $_POST['snapshot_ten_tour'] ?? '';
+                if (empty($tenTourSnapshot) && !empty($tourInfo)) {
+                    $tenTourSnapshot = $tourInfo['ten_tour'];
                 }
+
+                // 3. Xử lý số lượng khách
+                $passengers = $_POST['passengers'] ?? [];
+                $soLuongKhach = count($passengers);
+                if ($soLuongKhach == 0) {
+                    $soLuongKhach = (int)($_POST['so_luong_khach'] ?? 1);
+                }
+
+                // 4. Tính tiền
+                $tongTien = $giaTour * $soLuongKhach;
+
+                // 5. Chuẩn bị dữ liệu
+                $bookingData = [
+                    'tour_id'           => $tourId,
+                    'khach_hang_id'     => $_POST['khach_hang_id'],
+                    'so_luong_khach'    => $soLuongKhach,
+                    'tong_tien'         => $tongTien,
+                    'ghi_chu'           => $_POST['ghi_chu'] ?? '',
+                    'trang_thai'        => $_POST['trang_thai'] ?? 'CHO_XU_LY',
+                    // Xóa dấu chấm/phẩy ở tiền cọc để lưu số
+                    'da_thanh_toan'     => isset($_POST['da_thanh_toan']) ? str_replace(['.', ','], '', $_POST['da_thanh_toan']) : 0,
+
+                    // Snapshot Khách
+                    'ten_khach'         => $_POST['snapshot_kh_ho_ten'] ?? '',
+                    'email_khach'       => $_POST['snapshot_kh_email'] ?? '',
+                    'sdt_khach'         => $_POST['snapshot_kh_so_dien_thoai'] ?? '',
+                    'dia_chi_khach'     => $_POST['snapshot_kh_dia_chi'] ?? '',
+                    
+                    // Snapshot Tour
+                    'ten_tour_snapshot' => $tenTourSnapshot 
+                ];
+
+                // 6. Insert Booking
+                $bookingId = $this->model->insert($bookingData);
+
+                // 7. Lưu khách đi cùng (Nếu có)
+                if ($bookingId && !empty($passengers) && $this->khachThamGiaModel) {
+                    foreach ($passengers as $p) {
+                        if (!empty($p['ho_ten'])) {
+                            $this->khachThamGiaModel->insert([
+                                'booking_id' => $bookingId,
+                                'ho_ten'     => $p['ho_ten'],
+                                'gioi_tinh'  => $p['gioi_tinh'],
+                                'ngay_sinh'  => $p['ngay_sinh'],
+                                'so_giay_to' => $p['so_giay_to'],
+                                'ghi_chu'    => $p['ghi_chu']
+                            ]);
+                        }
+                    }
+                }
+
+                // 8. Chuyển hướng
+                header("Location: index.php?act=booking-detail&id=" . $bookingId);
+                exit;
             }
-
-            // Snapshot thông tin
-            $ten_tour_snapshot = 'Chưa xác định';
-            if ($tour_id) {
-                $tourInfo = $this->tourModel->getById($tour_id);
-                if ($tourInfo) $ten_tour_snapshot = $tourInfo['ten_tour'];
-            }
-            $kh = $this->khachHangModel->getById($khach_hang_id);
-
-            $data = [
-                'tour_id' => $tour_id,
-                'snapshot_ten_tour' => $ten_tour_snapshot,
-                'khach_hang_id' => $khach_hang_id,
-                'so_luong_nguoi_lon' => $so_luong_nguoi_lon,
-                'so_luong_tre_em' => $so_luong_tre_em,
-                'loai_booking' => $loai_booking, 
-                
-                'snapshot_kh_ho_ten' => $kh['ho_ten'] ?? '',
-                'snapshot_kh_email' => $kh['email'] ?? '',
-                'snapshot_kh_so_dien_thoai' => $kh['so_dien_thoai'] ?? '',
-                'snapshot_kh_dia_chi' => $kh['dia_chi'] ?? '',
-                
-                'ngay_dat' => date('Y-m-d H:i:s'),
-                'tong_tien' => $tong_tien,
-                'da_thanh_toan' => $da_thanh_toan,
-                'trang_thai' => $trang_thai
-            ];
-
-            $this->bookingModel->insert($data);
-            header('Location: index.php?act=booking-list&msg=success');
-            exit();
         }
-    }
-    
-    // 4. CHI TIẾT
-    public function detail() {
-        $id = $_GET['id'] ?? 0;
-        $booking = $this->bookingModel->getOne($id);
-        $guestList = $this->khachThamGiaModel->getByBookingId($id); 
-        require_once 'views/admin/booking/detail.php';
-    }
 
-    // 5. CẬP NHẬT TRẠNG THÁI
-    public function updateStatus() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->bookingModel->updateStatus($_POST['id'], $_POST['trang_thai']);
-            header("Location: " . BASE_URL . "?act=booking-detail&id=" . $_POST['id']);
+        // 5. Form Sửa
+        public function edit() {
+            $id = $_GET['id'] ?? 0;
+            $booking = $this->model->getOne($id);
+            if (!$booking) die("Booking không tồn tại");
+
+            $khachhangs = $this->khachModel->getAll();
+            $tours = $this->tourModel->getAll();
+
+            require ROOT . "/views/admin/booking/edit.php";
+        }
+
+        // 6. Cập nhật
+        public function update() {
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                $id = $_POST['id'];
+                
+                // Tính lại tiền nếu đổi tour hoặc số lượng
+                $tour = $this->tourModel->getById($_POST['tour_id']);
+                $giaTour = $tour['gia_tour'] ?? 0;
+                
+                // Ưu tiên lấy tổng tiền nhập tay, nếu không thì tự tính
+                $tongTien = !empty($_POST['tong_tien']) ? $_POST['tong_tien'] : ($giaTour * (int)$_POST['so_luong_khach']);
+
+                $data = [
+                    'id'                => $id,
+                    'tour_id'           => $_POST['tour_id'],
+                    'khach_hang_id'     => $_POST['khach_hang_id'],
+                    'so_luong_khach'    => $_POST['so_luong_khach'],
+                    'tong_tien'         => $tongTien,
+                    'trang_thai'        => $_POST['trang_thai'],
+                    'ghi_chu'           => $_POST['ghi_chu'] ?? ''
+                ];
+
+                $this->model->update($id, $data);
+                header("Location: index.php?act=booking-detail&id=" . $id);
+                exit;
+            }
+        }
+
+        // 7. Xóa
+        public function delete() {
+            $id = $_GET['id'];
+            $this->model->delete($id);
+            header("Location: index.php?act=bookings");
             exit;
         }
-    }
-    
-    // 6. EDIT FORM
-    public function edit() {
-        $id = $_GET['id'] ?? 0;
-        $booking = $this->bookingModel->getOne($id);
         
-        $toursStmt = $this->tourModel->getAll([]); 
-        $tours = $toursStmt->fetchAll(PDO::FETCH_ASSOC);
-        $customers = $this->khachHangModel->getAll();
-
-        require_once 'views/admin/booking/edit.php';
-    }
-
-    // 7. XỬ LÝ CẬP NHẬT
-    public function update() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id = $_POST['id'];
-            $tour_id = $_POST['tour_id'];
-            $khach_hang_id = $_POST['khach_hang_id'];
-            $so_luong_nguoi_lon = (int)$_POST['so_luong_nguoi_lon'];
-            $so_luong_tre_em = (int)$_POST['so_luong_tre_em'];
-            
-            // Tính lại tiền (Backend Calculation để an toàn)
-            $tour = $this->tourModel->getById($tour_id);
-            $gia_nl = $this->toNumber($tour['gia_nguoi_lon'] > 0 ? $tour['gia_nguoi_lon'] : $tour['gia_tour']);
-            $gia_te = $this->toNumber($tour['gia_tre_em'] > 0 ? $tour['gia_tre_em'] : ($gia_nl * 0.7));
-            
-            $tong_tien = ($gia_nl * $so_luong_nguoi_lon) + ($gia_te * $so_luong_tre_em);
-            
-            // Tiền đã thanh toán lấy từ form
-            $da_thanh_toan = $this->toNumber($_POST['da_thanh_toan']);
-
-            $kh = $this->khachHangModel->getById($khach_hang_id);
-
-            $data = [
-                'tour_id' => $tour_id,
-                'snapshot_ten_tour' => $tour['ten_tour'],
-                'khach_hang_id' => $khach_hang_id,
-                'so_luong_nguoi_lon' => $so_luong_nguoi_lon,
-                'so_luong_tre_em' => $so_luong_tre_em,
-                'loai_booking' => $_POST['loai_booking'],
-                
-                'snapshot_kh_ho_ten' => $kh['ho_ten'] ?? '',
-                'snapshot_kh_email' => $kh['email'] ?? '',
-                'snapshot_kh_so_dien_thoai' => $kh['so_dien_thoai'] ?? '',
-                'snapshot_kh_dia_chi' => $kh['dia_chi'] ?? '',
-                
-                'tong_tien' => $tong_tien,
-                'da_thanh_toan' => $da_thanh_toan,
-                'trang_thai' => $_POST['trang_thai']
-            ];
-
-            $this->bookingModel->update($id, $data);
-            header("Location: " . BASE_URL . "?act=booking-list");
-            exit;
-        }
-    }
-
-    public function delete() {
-        $this->bookingModel->delete($_GET['id']);
-        header("Location: " . BASE_URL . "?act=booking-list");
-        exit;
-    }
-
-    // ... (Giữ nguyên các hàm quản lý khách tham gia storeGuest, editGuest...)
-    public function storeGuest() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                ':booking_id' => $_POST['booking_id'],
-                ':ho_ten' => $_POST['ho_ten'],
-                ':gioi_tinh' => $_POST['gioi_tinh'],
-                ':ngay_sinh' => $_POST['ngay_sinh'] ?: null,
-                ':so_giay_to' => $_POST['so_giay_to'],
-                ':ghi_chu' => $_POST['ghi_chu'],
-                ':yeu_cau_dac_biet' => $_POST['yeu_cau_dac_biet']
-            ];
-            $this->khachThamGiaModel->insert($data);
-            header("Location: " . BASE_URL . "?act=booking-detail&id=" . $_POST['booking_id']);
-            exit;
-        }
-    }
-    
-    public function deleteGuest() {
-        $this->khachThamGiaModel->delete($_GET['id']);
-        header("Location: " . BASE_URL . "?act=booking-detail&id=" . $_GET['booking_id']);
-        exit;
-    }
-    
-    public function editGuest() {
-        $id = $_GET['id'];
-        $booking_id = $_GET['booking_id'];
-        $guest = $this->khachThamGiaModel->getOne($id);
-        require_once 'views/admin/booking/guest_edit.php';
-    }
-    
-    public function updateGuest() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'ho_ten' => $_POST['ho_ten'],
-                'gioi_tinh' => $_POST['gioi_tinh'],
-                'ngay_sinh' => $_POST['ngay_sinh'] ?: null,
-                'so_giay_to' => $_POST['so_giay_to'],
-                'ghi_chu' => $_POST['ghi_chu'],
-                'yeu_cau_dac_biet' => $_POST['yeu_cau_dac_biet']
-            ];
-            $this->khachThamGiaModel->update($_POST['id'], $data);
-            header("Location: " . BASE_URL . "?act=booking-detail&id=" . $_POST['booking_id']);
-            exit;
+        // 8. Cập nhật trạng thái nhanh (nếu cần)
+        public function updateStatus() {
+             // Logic cập nhật nhanh
         }
     }
 }

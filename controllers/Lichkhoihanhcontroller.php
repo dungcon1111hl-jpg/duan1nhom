@@ -124,7 +124,29 @@ class LichKhoiHanhController {
 
         require ROOT . "/views/admin/lich_khoi_hanh/detail.php";
     }
+    // 8. Xem danh sách khách đoàn (Manifest)
+public function danhSachKhach() {
+        // 1. Lấy ID từ URL, nếu không có thì mặc định là 0
+        $lich_id = $_GET['id'] ?? 0;
 
+        // 2. Lấy thông tin lịch trình
+        $lich = $this->model->getById($lich_id);
+        
+        // [FIX LỖI] Kiểm tra: Nếu không tìm thấy lịch thì báo lỗi và quay về
+        if (!$lich) {
+            echo "<script>
+                    alert('Lịch trình không tồn tại hoặc đã bị xóa!'); 
+                    window.location.href = 'index.php?act=lich-khoi-hanh';
+                  </script>";
+            return;
+        }
+        
+        // 3. Nếu có lịch thì mới lấy danh sách khách
+        $guideModel = new GuideModel($this->db);
+        $passengers = $guideModel->getPassengers($lich_id);
+
+        require ROOT . "/views/admin/lich_khoi_hanh/danh_sach_khach.php";
+    }
     // --- CÁC HÀM PHỤ KHÁC ---
     public function phanCong() { $this->detail(); }
 

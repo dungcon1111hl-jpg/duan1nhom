@@ -1,7 +1,7 @@
 <?php require_once PATH_ROOT . '/views/header.php'; ?>
 
 <?php
-    // Xử lý dữ liệu để tránh lỗi
+    // Xử lý dữ liệu mặc định để tránh lỗi
     $lich = $lich ?? [];
     $list_nhansu = $list_nhansu ?? [];
     $list_dichvu = $list_dichvu ?? [];
@@ -15,9 +15,15 @@
                 <h2 class="fw-bold text-primary">
                     <i class="fas fa-info-circle me-2"></i>Chi Tiết Lịch Khởi Hành
                 </h2>
+                <a href="index.php?act=lich-danh-sach-khach&id=<?= $lich['id'] ?>" class="btn btn-info text-white fw-bold shadow-sm me-2">
+                    <i class="fas fa-clipboard-list"></i> Danh sách Đoàn
+                </a>
                 <div class="text-muted">Mã Lịch: <strong>#<?= $lich['id'] ?></strong></div>
             </div>
             <div>
+                <a href="index.php?act=chiphi-list&lich_id=<?= $lich['id'] ?>" class="btn btn-danger fw-bold shadow-sm me-2">
+                    <i class="fas fa-coins"></i> Quản lý Chi phí
+                </a>
                 <a href="index.php?act=lich-khoi-hanh-edit&id=<?= $lich['id'] ?>" class="btn btn-warning fw-bold shadow-sm me-2">
                     <i class="fas fa-edit"></i> Sửa thông tin
                 </a>
@@ -28,7 +34,7 @@
         </div>
 
         <div class="row">
-            <!-- KHỐI 1: THÔNG TIN TOUR & LỊCH TRÌNH -->
+            <!-- Thông tin tour & lịch trình -->
             <div class="col-12 mb-4">
                 <div class="card border-primary shadow-sm">
                     <div class="card-header bg-primary text-white fw-bold">
@@ -92,7 +98,7 @@
                 </div>
             </div>
 
-            <!-- KHỐI 2: NHÂN SỰ -->
+            <!-- Nhân sự -->
             <div class="col-md-5 mb-4">
                 <div class="card border-info shadow-sm h-100">
                     <div class="card-header bg-info text-white fw-bold d-flex justify-content-between align-items-center">
@@ -141,12 +147,11 @@
                 </div>
             </div>
 
-            <!-- KHỐI 3: DỊCH VỤ ĐÃ ĐẶT -->
+            <!-- Dịch vụ đã đặt -->
             <div class="col-md-7 mb-4">
                 <div class="card border-success shadow-sm h-100">
                     <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-concierge-bell me-2"></i> Dịch vụ đã đặt</span>
-                        <!-- Nếu có trang quản lý dịch vụ riêng thì link vào đây -->
                         <a href="index.php?act=lich-phan-cong&id=<?= $lich['id'] ?>" class="btn btn-sm btn-light text-success fw-bold">Quản lý</a>
                     </div>
                     <div class="card-body p-0">
@@ -167,17 +172,21 @@
                                             <div class="fw-bold text-dark"><?= htmlspecialchars($dv['chi_tiet']) ?></div>
                                             <div class="small text-muted">NCC: <?= htmlspecialchars($dv['ten_don_vi']) ?></div>
                                         </td>
-                                        <td class="text-center">
-                                            <?php 
-                                                $stt = $dv['trang_thai_dat'] ?? 'CHO_XAC_NHAN';
-                                                $sttClass = match($stt) {
-                                                    'DA_XAC_NHAN' => 'success',
-                                                    'CHO_XAC_NHAN' => 'warning text-dark',
-                                                    'HUY' => 'danger',
-                                                    default => 'secondary'
-                                                };
-                                            ?>
-                                            <span class="badge bg-<?= $sttClass ?>"><?= $stt ?></span>
+                                        <td class="text-center" style="min-width: 150px;">
+                                            <form action="index.php?act=lich-update-dichvu-status" method="POST" onchange="this.submit()">
+                                                <input type="hidden" name="id" value="<?= $dv['id'] ?>">
+                                                <input type="hidden" name="lich_id" value="<?= $lich['id'] ?>">
+                                                <select name="trang_thai_dat" class="form-select form-select-sm
+                                                    <?= $dv['trang_thai_dat']=='DA_XAC_NHAN'?'bg-success text-white':'' ?>
+                                                    <?= $dv['trang_thai_dat']=='CHO_XAC_NHAN'?'bg-warning text-dark':'' ?>
+                                                    <?= $dv['trang_thai_dat']=='HUY'?'bg-danger text-white':'' ?>
+                                                ">
+                                                    <option value="CHO_XAC_NHAN" <?= $dv['trang_thai_dat']=='CHO_XAC_NHAN'?'selected':'' ?>>Chờ XN</option>
+                                                    <option value="DA_XAC_NHAN" <?= $dv['trang_thai_dat']=='DA_XAC_NHAN'?'selected':'' ?>>Đã đặt</option>
+                                                    <option value="DA_COC" <?= $dv['trang_thai_dat']=='DA_COC'?'selected':'' ?>>Đã cọc</option>
+                                                    <option value="HUY" <?= $dv['trang_thai_dat']=='HUY'?'selected':'' ?>>Hủy</option>
+                                                </select>
+                                            </form>
                                         </td>
                                     </tr>
                                     <?php endforeach; else: ?>
@@ -190,7 +199,7 @@
                 </div>
             </div>
 
-            <!-- KHỐI 4: GHI CHÚ -->
+            <!-- Ghi chú -->
             <div class="col-12 mb-4">
                 <div class="card border-secondary shadow-sm">
                     <div class="card-header bg-secondary text-white fw-bold">

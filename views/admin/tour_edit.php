@@ -2,12 +2,13 @@
 
 <?php
     // Xử lý dữ liệu mặc định
+    $tour = $tour ?? [];
     $list_anh = $list_anh ?? [];
     $list_lich_trinh = $list_lich_trinh ?? [];
-    $tour = $tour ?? [];
     $dsNcc = $dsNcc ?? [];
     $selectedNcc = $selectedNcc ?? [];
     $dsHDV = $dsHDV ?? [];
+    $dsDanhMuc = $dsDanhMuc ?? []; // Danh mục tour
 ?>
 
 <main>
@@ -51,29 +52,33 @@
                         <div class="col-lg-8">
                             <div class="card mb-4 border-0 shadow-sm">
                                 <div class="card-body">
+                                    
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Tên Tour <span class="text-danger">*</span></label>
                                         <input type="text" name="ten_tour" class="form-control" value="<?= htmlspecialchars($tour['ten_tour'] ?? '') ?>" required>
                                     </div>
                                     
                                     <div class="row g-3 mb-3">
-                                        <div class="col-md-4">
+                                        <div class="col-md-8">
                                             <label class="form-label fw-bold">Mã Tour</label>
                                             <input type="text" name="ma_tour" class="form-control" value="<?= htmlspecialchars($tour['ma_tour'] ?? '') ?>">
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label fw-bold">Loại Tour</label>
+                                            <label class="form-label fw-bold">Danh mục Tour</label>
                                             <select name="loai_tour" class="form-select">
-                                                <?php 
-                                                    $types = ['TRONG_NUOC' => 'Trong nước', 'QUOC_TE' => 'Quốc tế', 'THEO_YEU_CAU' => 'Theo yêu cầu'];
-                                                    foreach ($types as $k => $v) {
-                                                        $sel = ($tour['loai_tour'] ?? '') == $k ? 'selected' : '';
-                                                        echo "<option value='$k' $sel>$v</option>";
-                                                    }
-                                                ?>
+                                                <option value="">-- Chọn danh mục --</option>
+                                                <?php foreach ($dsDanhMuc as $dm): ?>
+                                                    <option value="<?= $dm['id'] ?>" 
+                                                        <?= (isset($tour['loai_tour']) && $tour['loai_tour'] == $dm['id']) ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($dm['ten_danh_muc']) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
-                                        <div class="col-md-4">
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
                                             <label class="form-label fw-bold">Phân loại nâng cao</label>
                                             <select name="loai_tour_nang_cao" class="form-select">
                                                 <?php 
@@ -85,27 +90,69 @@
                                                 ?>
                                             </select>
                                         </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Đối tượng khách</label>
+                                            <select name="doi_tuong_khach" class="form-select">
+                                                <?php 
+                                                    $clients = ['KHACH_LE' => 'Khách lẻ', 'KHACH_DOAN' => 'Khách đoàn', 'GIA_DINH' => 'Gia đình'];
+                                                    foreach ($clients as $k => $v) {
+                                                        $sel = ($tour['doi_tuong_khach'] ?? '') == $k ? 'selected' : '';
+                                                        echo "<option value='$k' $sel>$v</option>";
+                                                    }
+                                                ?>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="mb-3 bg-light p-3 rounded border">
-                                        <label class="form-label fw-bold text-success"><i class="fas fa-tags me-1"></i> Bảng giá (VNĐ)</label>
+                                        <label class="form-label fw-bold text-success"><i class="fas fa-tags me-1"></i> Bảng giá chi tiết (VNĐ)</label>
                                         <div class="row g-2">
-                                            <div class="col-md-3"><label class="small text-muted">Người lớn</label><input type="number" name="gia_nguoi_lon" class="form-control fw-bold" value="<?= $tour['gia_nguoi_lon'] ?? 0 ?>"></div>
-                                            <div class="col-md-3"><label class="small text-muted">Trẻ em</label><input type="number" name="gia_tre_em" class="form-control" value="<?= $tour['gia_tre_em'] ?? 0 ?>"></div>
-                                            <div class="col-md-3"><label class="small text-muted">Em bé</label><input type="number" name="gia_em_be" class="form-control" value="<?= $tour['gia_em_be'] ?? 0 ?>"></div>
-                                            <div class="col-md-3"><label class="small text-muted">Phụ thu</label><input type="number" name="phu_thu" class="form-control" value="<?= $tour['phu_thu'] ?? 0 ?>"></div>
+                                            <div class="col-md-3">
+                                                <label class="small text-muted fw-bold">Người lớn (>12t)</label>
+                                                <input type="number" name="gia_nguoi_lon" class="form-control fw-bold text-primary" 
+                                                       value="<?= $tour['gia_nguoi_lon'] ?? 0 ?>" oninput="syncPrice(this)">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="small text-muted fw-bold">Trẻ em (5-11t)</label>
+                                                <input type="number" name="gia_tre_em" class="form-control" 
+                                                       value="<?= $tour['gia_tre_em'] ?? 0 ?>">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="small text-muted fw-bold">Em bé (<5t)</label>
+                                                <input type="number" name="gia_em_be" class="form-control" 
+                                                       value="<?= $tour['gia_em_be'] ?? 0 ?>">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="small text-muted fw-bold">Phụ thu/Lễ tết</label>
+                                                <input type="number" name="phu_thu" class="form-control" 
+                                                       value="<?= $tour['phu_thu'] ?? 0 ?>">
+                                            </div>
                                         </div>
-                                        <div class="mt-2 small text-muted">* Giá hiển thị chính: <input type="number" name="gia_tour" class="d-inline-block form-control form-control-sm w-25" value="<?= $tour['gia_tour'] ?? 0 ?>"></div>
+                                        <div class="mt-2 d-flex align-items-center">
+                                            <label class="small me-2 fw-bold text-secondary">* Giá hiển thị chính:</label>
+                                            <input type="number" name="gia_tour" id="main_price" 
+                                                   class="d-inline-block form-control form-control-sm w-25 fw-bold text-danger" 
+                                                   value="<?= $tour['gia_tour'] ?? 0 ?>">
+                                        </div>
                                     </div>
 
                                     <div class="row g-3 mb-3">
-                                        <div class="col-md-4"><label class="form-label fw-bold text-primary">Điểm đi</label><input type="text" name="dia_diem_bat_dau" class="form-control" value="<?= htmlspecialchars($tour['dia_diem_bat_dau'] ?? '') ?>"></div>
-                                        <div class="col-md-4"><label class="form-label fw-bold text-warning">Trung chuyển</label><input type="text" name="diem_trung_chuyen" class="form-control" value="<?= htmlspecialchars($tour['diem_trung_chuyen'] ?? '') ?>"></div>
-                                        <div class="col-md-4"><label class="form-label fw-bold text-success">Điểm đến</label><input type="text" name="dia_diem_ket_thuc" class="form-control" value="<?= htmlspecialchars($tour['dia_diem_ket_thuc'] ?? '') ?>"></div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-primary">Điểm đi</label>
+                                            <input type="text" name="dia_diem_bat_dau" class="form-control" value="<?= htmlspecialchars($tour['dia_diem_bat_dau'] ?? '') ?>">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-warning">Trung chuyển</label>
+                                            <input type="text" name="diem_trung_chuyen" class="form-control" value="<?= htmlspecialchars($tour['diem_trung_chuyen'] ?? '') ?>">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-success">Điểm đến</label>
+                                            <input type="text" name="dia_diem_ket_thuc" class="form-control" value="<?= htmlspecialchars($tour['dia_diem_ket_thuc'] ?? '') ?>">
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold text-info"><i class="fas fa-handshake me-1"></i> Nhà cung cấp</label>
+                                        <label class="form-label fw-bold text-info"><i class="fas fa-handshake me-1"></i> Nhà cung cấp dịch vụ</label>
                                         <div class="border rounded p-3 bg-white" style="max-height: 150px; overflow-y: auto;">
                                             <?php if(!empty($dsNcc)): ?>
                                                 <div class="row g-2">
@@ -115,7 +162,8 @@
                                                             <div class="form-check">
                                                                 <input class="form-check-input" type="checkbox" name="ncc[]" value="<?= $ncc['id'] ?>" id="ncc_edit_<?= $ncc['id'] ?>" <?= $isChecked ?>>
                                                                 <label class="form-check-label" for="ncc_edit_<?= $ncc['id'] ?>">
-                                                                    <?= $ncc['ten_don_vi'] ?> <small class="text-muted">(<?= $ncc['loai_dich_vu'] ?>)</small>
+                                                                    <strong><?= htmlspecialchars($ncc['ten_don_vi']) ?></strong> 
+                                                                    <small class="text-muted">(<?= htmlspecialchars($ncc['loai_dich_vu']) ?>)</small>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -125,8 +173,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="mb-3"><label class="form-label fw-bold">Mô tả ngắn</label><textarea name="mo_ta_ngan" class="form-control" rows="2"><?= htmlspecialchars($tour['mo_ta_ngan'] ?? '') ?></textarea></div>
-                                    <div class="mb-3"><label class="form-label fw-bold">Chi tiết chương trình</label><textarea name="mo_ta_chi_tiet" class="form-control" rows="4"><?= htmlspecialchars($tour['mo_ta_chi_tiet'] ?? '') ?></textarea></div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Mô tả ngắn (SEO)</label>
+                                        <textarea name="mo_ta_ngan" class="form-control" rows="2"><?= htmlspecialchars($tour['mo_ta_ngan'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Chi tiết chương trình</label>
+                                        <textarea name="mo_ta_chi_tiet" class="form-control" rows="4"><?= htmlspecialchars($tour['mo_ta_chi_tiet'] ?? '') ?></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -134,13 +188,19 @@
                         <div class="col-lg-4">
                             <div class="card bg-light border-0 mb-3">
                                 <div class="card-body">
-                                    <div class="mb-3"><label class="form-label fw-bold">Ngày đi</label><input type="date" name="ngay_khoi_hanh" class="form-control" value="<?= $tour['ngay_khoi_hanh'] ?? '' ?>"></div>
-                                    <div class="mb-3"><label class="form-label fw-bold">Ngày về</label><input type="date" name="ngay_ket_thuc" class="form-control" value="<?= $tour['ngay_ket_thuc'] ?? '' ?>"></div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Ngày khởi hành</label>
+                                        <input type="date" name="ngay_khoi_hanh" class="form-control" value="<?= $tour['ngay_khoi_hanh'] ?? '' ?>">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Ngày kết thúc</label>
+                                        <input type="date" name="ngay_ket_thuc" class="form-control" value="<?= $tour['ngay_ket_thuc'] ?? '' ?>">
+                                    </div>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold">Hướng dẫn viên</label>
+                                        <label class="form-label fw-bold"><i class="fas fa-user-tie me-1"></i> Hướng dẫn viên</label>
                                         <select name="hdv_id" class="form-select">
-                                            <option value="">-- Chưa chọn --</option>
+                                            <option value="">-- Chọn HDV --</option>
                                             <?php if(!empty($dsHDV)): foreach($dsHDV as $hdv): ?>
                                                 <option value="<?= $hdv['id'] ?>" <?= (isset($tour['hdv_id']) && $tour['hdv_id'] == $hdv['id']) ? 'selected' : '' ?>>
                                                     <?= htmlspecialchars($hdv['ho_ten']) ?>
@@ -154,27 +214,40 @@
                                         <?php if (!empty($tour['anh_minh_hoa'])): ?>
                                             <img src="<?= BASE_URL ?>uploads/tours/<?= $tour['anh_minh_hoa'] ?>" class="img-fluid rounded mb-2 border" style="max-height: 160px">
                                         <?php endif; ?>
-                                        <input type="file" name="anh_minh_hoa" class="form-control form-control-sm mt-2">
+                                        <input type="file" name="anh_minh_hoa" class="form-control form-control-sm mt-2" onchange="previewImage(this)">
+                                        <img id="imgPreview" class="img-fluid rounded mt-2 d-none" style="max-height: 160px">
                                     </div>
                                     
-                                    <div class="mb-3"><label class="form-label fw-bold">Số vé (Tổng/Còn)</label>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Số vé (Min - Max)</label>
                                         <div class="input-group">
-                                            <input type="number" name="so_luong_ve" class="form-control" value="<?= $tour['so_luong_ve'] ?? 0 ?>">
-                                            <input type="number" name="so_ve_con_lai" class="form-control" value="<?= $tour['so_ve_con_lai'] ?? 0 ?>">
+                                            <input type="number" name="so_khach_toithieu" class="form-control" value="<?= $tour['so_khach_toithieu'] ?? 10 ?>" placeholder="Min">
+                                            <span class="input-group-text">-</span>
+                                            <input type="number" name="so_luong_ve" class="form-control" value="<?= $tour['so_luong_ve'] ?? 30 ?>" placeholder="Max">
                                         </div>
                                     </div>
 
-                                    <div class="mb-3"><label class="form-label fw-bold">Trạng thái</label>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Số chỗ còn nhận</label>
+                                        <input type="number" name="so_ve_con_lai" class="form-control" value="<?= $tour['so_ve_con_lai'] ?? 0 ?>">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Trạng thái</label>
                                         <select name="trang_thai" class="form-select">
                                             <?php
                                             $stt = $tour['trang_thai'] ?? 'CON_VE';
-                                            $opts = ['CON_VE'=>'Còn vé', 'HET_VE'=>'Hết vé', 'DA_KHOI_HANH'=>'Đã khởi hành', 'HUY'=>'Hủy', 'NGUNG_HOAT_DONG'=>'Ngừng HĐ'];
+                                            $opts = ['CON_VE'=>'Còn vé', 'HET_VE'=>'Hết vé', 'DA_KHOI_HANH'=>'Đã khởi hành', 'HUY'=>'Hủy', 'NGUNG_HOAT_DONG'=>'Ngừng hoạt động'];
                                             foreach($opts as $k=>$v) echo "<option value='$k' ".($stt == $k ? 'selected' : '').">$v</option>";
                                             ?>
                                         </select>
                                     </div>
                                     
-                                    <div class="d-grid mt-4"><button type="submit" class="btn btn-warning fw-bold text-white"><i class="fas fa-save me-1"></i> Cập nhật thông tin</button></div>
+                                    <div class="d-grid mt-4">
+                                        <button type="submit" class="btn btn-warning fw-bold text-white btn-lg shadow-sm">
+                                            <i class="fas fa-save me-1"></i> Cập nhật thông tin
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -279,9 +352,6 @@
                                                 <div class="mt-1 small text-muted">
                                                     <?= nl2br(htmlspecialchars($lt['noi_dung'] ?? $lt['hoat_dong'] ?? '')) ?>
                                                 </div>
-                                                <?php if(!empty($lt['ghi_chu'])): ?>
-                                                    <div class="small fst-italic text-warning">* Note: <?= htmlspecialchars($lt['ghi_chu']) ?></div>
-                                                <?php endif; ?>
                                             </td>
                                             <td class="text-end">
                                                 <a href="index.php?act=tour-schedule-delete&id=<?= $lt['id'] ?>&tour_id=<?= $tour['id'] ?>&redirect_to=tour-edit" 
@@ -332,18 +402,18 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tiêu đề (VD: Sáng - Tham quan Kinh Thành)</label>
-                        <input type="text" name="tieu_de" class="form-control" required placeholder="Nhập tiêu đề ngắn...">
+                        <label class="form-label fw-bold">Tiêu đề</label>
+                        <input type="text" name="tieu_de" class="form-control" required placeholder="VD: Tham quan Đại Nội">
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Điểm tham quan chính</label>
+                        <label class="form-label fw-bold">Điểm tham quan</label>
                         <input type="text" name="dia_diem" class="form-control" placeholder="VD: Đại Nội, Chùa Thiên Mụ">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Nội dung chi tiết hoạt động</label>
-                        <textarea name="noi_dung" class="form-control" rows="4" placeholder="Mô tả chi tiết hoạt động, ăn uống, nghỉ ngơi..."></textarea>
+                        <label class="form-label fw-bold">Nội dung chi tiết</label>
+                        <textarea name="noi_dung" class="form-control" rows="4" placeholder="Mô tả hoạt động..."></textarea>
                     </div>
 
                     <div class="mb-3">
@@ -359,6 +429,29 @@
         </div>
     </div>
 </div>
+
+<script>
+// Tự động điền giá chung khi nhập giá người lớn
+function syncPrice(input) {
+    var mainPrice = document.getElementById('main_price');
+    if (mainPrice.value == '' || mainPrice.value == '0') {
+        mainPrice.value = input.value;
+    }
+}
+
+// Preview ảnh
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) { 
+            var img = document.getElementById('imgPreview');
+            img.src = e.target.result; 
+            img.classList.remove('d-none');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 
 <style>
     .btn-delete { opacity: 0; transition: opacity 0.2s; }

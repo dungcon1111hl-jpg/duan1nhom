@@ -1,77 +1,71 @@
 <?php
 require_once 'models/DatDichVuModel.php';
+if (file_exists('models/BookingModel.php')) require_once 'models/BookingModel.php';
 
 class DatDichVuController {
     private $model;
+    private $bookingModel;
     private $db;
 
     public function __construct($db) {
         $this->db = $db;
         $this->model = new DatDichVuModel($db);
+        if (class_exists('BookingModel')) $this->bookingModel = new BookingModel();
     }
 
-    // [CẬP NHẬT] Hiển thị danh sách (Hỗ trợ cả 2 chế độ)
     public function index() {
         $booking_id = $_GET['booking_id'] ?? 0;
-
-        if ($booking_id > 0) {
-            // Chế độ 1: Xem dịch vụ của 1 Booking cụ thể
-            $dichvus = $this->model->getByBookingId($booking_id);
-        } else {
-            // Chế độ 2: Xem tất cả dịch vụ (khi bấm từ menu)
-            $dichvus = $this->model->getAll();
-        }
+        $dichvus = ($booking_id > 0) ? $this->model->getByBooking($booking_id) : $this->model->getAll();
         
-        // Tính tổng tiền hiển thị
         $tong_tien = 0;
-        foreach ($dichvus as $dv) {
-            $tong_tien += $dv['thanh_tien'];
-        }
+        foreach ($dichvus as $dv) $tong_tien += $dv['thanh_tien'];
 
         require ROOT . "/views/admin/dichvu/list.php";
     }
 
     public function create() {
-        $booking_id = $_GET['booking_id'] ?? 0;
-        // Nếu không có booking_id, yêu cầu nhập hoặc chọn (ở đây ta chặn lại cho đơn giản)
-        if ($booking_id == 0) {
-            echo "<script>alert('Vui lòng chọn một Booking trước khi thêm dịch vụ!'); window.history.back();</script>";
-            return;
-        }
+        $selected_booking_id = $_GET['booking_id'] ?? 0;
+        $bookings = ($this->bookingModel && method_exists($this->bookingModel, 'getAll')) ? $this->bookingModel->getAll() : [];
         require ROOT . "/views/admin/dichvu/create.php";
     }
 
     public function store() {
-        $this->model->insert($_POST);
-        header("Location: index.php?act=dichvu-list&booking_id=" . $_POST['booking_id']);
-        exit;
+        if (empty($_POST['booking_id']) || empty($_POST['ten_dich_vu'])) {
+             echo "<script>alert('Vui lòng chọn Booking và nhập tên dịch vụ!'); history.back();</script>";
+             return;
+        }
+
+        if ($this->model->insert($_POST)) {
+            header("Location: index.php?act=dichvu-list&booking_id=" . $_POST['booking_id']);
+            exit;
+        } else {
+            // Hiển thị lỗi chi tiết từ Model
+            $err = $_SESSION['system_error'] ?? 'Lỗi không xác định';
+            echo "<script>alert('Lỗi Database: $err'); history.back();</script>";
+            unset($_SESSION['system_error']);
+        }
     }
 
     public function edit() {
-        $id = $_GET['id'] ?? 0;
-        $dichvu = $this->model->getOne($id);
+        $dichvu = $this->model->getById($_GET['id'] ?? 0);
+        if (!$dichvu) die("Dịch vụ không tồn tại");
         require ROOT . "/views/admin/dichvu/edit.php";
     }
 
     public function update() {
-        $id = $_POST['id'];
-        $this->model->update($id, $_POST);
-        header("Location: index.php?act=dichvu-list&booking_id=" . $_POST['booking_id']);
-        exit;
+        if ($this->model->update($_POST['id'], $_POST)) {
+            header("Location: index.php?act=dichvu-list&booking_id=" . $_POST['booking_id']);
+            exit;
+        } else {
+            $err = $_SESSION['system_error'] ?? 'Lỗi cập nhật';
+            echo "<script>alert('Lỗi Database: $err'); history.back();</script>";
+            unset($_SESSION['system_error']);
+        }
     }
 
     public function delete() {
-        $id = $_GET['id'];
-        $booking_id = $_GET['booking_id'] ?? 0;
-        
-        $this->model->delete($id);
-        
-        // Quay lại đúng chỗ
-        if ($booking_id > 0) {
-            header("Location: index.php?act=dichvu-list&booking_id=" . $booking_id);
-        } else {
-            header("Location: index.php?act=dichvu-list");
-        }
+        $this->model->delete($_GET['id']);
+        header("Location: index.php?act=dichvu-list&booking_id=" . $_GET['booking_id']);
         exit;
     }
 }

@@ -35,5 +35,10 @@ class PhanBoDichVuModel {
         $stmt = $this->conn->prepare("DELETE FROM phan_bo_dich_vu WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
+    public function updateStatus($id, $status) {
+    $sql = "UPDATE phan_bo_dich_vu SET trang_thai_dat = :stt WHERE id = :id";
+    $stmt = $this->conn->prepare($sql);
+    return $stmt->execute([':stt' => $status, ':id' => $id]);
+}
 }
 ?>

@@ -1,7 +1,7 @@
 <?php require_once PATH_ROOT . '/views/header.php'; ?>
 
 <?php
-// ===== LOGIC PHP GIỮ NGUYÊN =====
+// Xử lý dữ liệu đầu vào an toàn
 $toursData = [];
 if (!empty($tours)) {
     if ($tours instanceof PDOStatement) {
@@ -38,14 +38,12 @@ foreach ($toursData as $t) {
         --bg-gray: #f9fafb;
     }
 
-    /* Xóa wrapper bao quanh toàn trang để tránh vỡ layout admin tổng */
     .main-content-inner {
         padding: 20px;
         background-color: var(--bg-gray);
-        min-height: calc(100vh - 60px); /* Trừ đi chiều cao header nếu có */
+        min-height: calc(100vh - 60px);
     }
 
-    /* Page Header */
     .custom-page-header {
         background: white;
         border-radius: 12px;
@@ -86,7 +84,6 @@ foreach ($toursData as $t) {
         transform: translateY(-2px);
     }
 
-    /* Stats Cards */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -115,7 +112,6 @@ foreach ($toursData as $t) {
         font-size: 1.25rem;
     }
 
-    /* Filter Section */
     .filter-wrapper {
         background: white;
         border-radius: 12px;
@@ -124,24 +120,23 @@ foreach ($toursData as $t) {
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* Table Styling */
     .table-container {
         background: white;
         border-radius: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        overflow: hidden; /* Bo tròn góc */
+        overflow: hidden;
     }
 
     .custom-table-responsive {
         width: 100%;
-        overflow-x: auto; /* Quan trọng: Cho phép cuộn ngang nếu bảng quá rộng */
+        overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
 
     .custom-table {
         width: 100%;
         border-collapse: collapse;
-        white-space: nowrap; /* Giữ nội dung trên 1 dòng */
+        white-space: nowrap;
     }
 
     .custom-table thead th {
@@ -166,7 +161,6 @@ foreach ($toursData as $t) {
         background-color: #f9fafb;
     }
 
-    /* Components inside table */
     .tour-thumbnail {
         width: 50px;
         height: 50px;
@@ -175,17 +169,6 @@ foreach ($toursData as $t) {
         border: 1px solid #e5e7eb;
     }
 
-    .badge-custom {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    /* Dropdown Actions - Fix Lỗi bị che */
     .action-group {
         position: relative;
     }
@@ -198,7 +181,7 @@ foreach ($toursData as $t) {
         border-radius: 8px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         min-width: 180px;
-        z-index: 999; /* Đảm bảo nổi lên trên */
+        z-index: 999;
         display: none;
         border: 1px solid #e5e7eb;
         padding: 5px 0;
@@ -332,8 +315,8 @@ foreach ($toursData as $t) {
                 <tbody>
                     <?php if (!empty($toursData)): ?>
                         <?php foreach ($toursData as $tour): 
-                             $soLuongVe = $tour['so_luong_ve'] ?? 0;
-                             $soVeConLai = $tour['so_ve_con_lai'] ?? 0;
+                             $soLuongVe = !empty($tour['so_luong_ve']) ? (int)$tour['so_luong_ve'] : 0;
+                             $soVeConLai = !empty($tour['so_ve_con_lai']) ? (int)$tour['so_ve_con_lai'] : 0;
                              $ticketPercent = $soLuongVe > 0 ? round(($soVeConLai / $soLuongVe) * 100) : 0;
                              $progressColor = $ticketPercent > 50 ? '#10b981' : ($ticketPercent > 20 ? '#f59e0b' : '#ef4444');
                         ?>
@@ -359,9 +342,9 @@ foreach ($toursData as $t) {
                             </td>
                             <td>
                                 <div class="d-flex align-items-center small gap-2">
-                                    <span class="badge bg-light text-dark border"><?= htmlspecialchars($tour['dia_diem_bat_dau']) ?></span>
+                                    <span class="badge bg-light text-dark border"><?= htmlspecialchars($tour['dia_diem_bat_dau'] ?? '---') ?></span>
                                     <i class="fas fa-arrow-right text-muted" style="font-size: 10px;"></i>
-                                    <span class="badge bg-light text-primary border border-primary"><?= htmlspecialchars($tour['dia_diem_ket_thuc']) ?></span>
+                                    <span class="badge bg-light text-primary border border-primary"><?= htmlspecialchars($tour['dia_diem_ket_thuc'] ?? '---') ?></span>
                                 </div>
                             </td>
                             <td>
@@ -371,12 +354,16 @@ foreach ($toursData as $t) {
                                     <?php else: ?>
                                         <span class="badge bg-info text-info bg-opacity-10 w-auto" style="width: fit-content;">Trong nước</span>
                                     <?php endif; ?>
-                                    <small class="text-muted"><i class="far fa-calendar me-1"></i><?= date('d/m/Y', strtotime($tour['ngay_khoi_hanh'])) ?></small>
+                                    
+                                    <small class="text-muted">
+                                        <i class="far fa-clock me-1"></i>
+                                        <?= !empty($tour['ngay_khoi_hanh']) ? date('d/m/Y', strtotime($tour['ngay_khoi_hanh'])) : 'Chưa có lịch' ?>
+                                    </small>
                                 </div>
                             </td>
                             <td>
                                 <div class="fw-bold text-success">
-                                    <?= number_format($tour['gia_tour'] ?? $tour['gia_nguoi_lon'] ?? 0) ?>₫
+                                    <?= number_format(!empty($tour['gia_tour']) ? $tour['gia_tour'] : ($tour['gia_nguoi_lon'] ?? 0)) ?>₫
                                 </div>
                                 <div class="d-flex align-items-center gap-2 mt-1">
                                     <div class="progress" style="height: 4px; width: 60px;">
@@ -393,7 +380,7 @@ foreach ($toursData as $t) {
                                         'DA_KHOI_HANH' => ['bg-info bg-opacity-10 text-info', 'Đã đi'],
                                         'NGUNG_HOAT_DONG' => ['bg-secondary bg-opacity-10 text-secondary', 'Ngừng']
                                     ];
-                                    $stt = $statusMap[$tour['trang_thai'] ?? ''] ?? ['bg-light text-muted', $tour['trang_thai']];
+                                    $stt = $statusMap[$tour['trang_thai'] ?? ''] ?? ['bg-light text-muted', $tour['trang_thai'] ?? 'N/A'];
                                 ?>
                                 <span class="badge <?= $stt[0] ?> rounded-pill border border-opacity-10"><?= $stt[1] ?></span>
                             </td>
@@ -412,8 +399,11 @@ foreach ($toursData as $t) {
                                         <a href="index.php?act=tour-edit&id=<?= $tour['id'] ?>#schedule" class="dropdown-item-custom">
                                             <i class="fas fa-calendar-day w-25"></i> Lịch trình
                                         </a>
+                                        <a href="index.php?act=lien-ket-list&tour_id=<?= $tour['id'] ?>" class="dropdown-item-custom text-success">
+                                            <i class="fas fa-link w-25"></i> Liên kết NCC
+                                        </a>
                                         <hr style="margin: 5px 0; border-color: #eee;">
-                                        <?php if($tour['trang_thai'] !== 'NGUNG_HOAT_DONG'): ?>
+                                        <?php if(($tour['trang_thai'] ?? '') !== 'NGUNG_HOAT_DONG'): ?>
                                             <a href="index.php?act=tour-delete&id=<?= $tour['id'] ?>" 
                                                class="dropdown-item-custom text-danger"
                                                onclick="return confirm('Ngừng hoạt động tour này?')">
@@ -455,7 +445,7 @@ function toggleDropdown(btn) {
     const menu = btn.nextElementSibling;
     menu.classList.toggle('show');
     
-    // Ngăn chặn sự kiện click lan ra ngoài (bubbling)
+    // Ngăn chặn sự kiện click lan ra ngoài
     event.stopPropagation();
 }
 

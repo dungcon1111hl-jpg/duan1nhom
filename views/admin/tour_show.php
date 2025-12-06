@@ -4,7 +4,7 @@
     $list_anh = $list_anh ?? [];
     $list_lich_trinh = $list_lich_trinh ?? [];
     $tour = $tour ?? [];
-    $hdv = $hdv ?? null; // Biến chứa thông tin HDV đã được Controller fetch
+    $hdv = $hdv ?? null; // Biến chứa thông tin HDV từ Controller
 ?>
 
 <main>
@@ -29,33 +29,34 @@
                         <div class="row mb-4">
                             <div class="col-md-4 mb-3">
                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Mã tour</small>
-                                <span class="fs-5 text-primary fw-bold"><?= $tour['ma_tour'] ?? '---' ?></span>
+                                <span class="fs-5 text-primary fw-bold"><?= htmlspecialchars($tour['ma_tour'] ?? '---') ?></span>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Loại Tour</small>
                                 <?php
-                                    $types = ['TRONG_NUOC' => 'Trong nước', 'QUOC_TE' => 'Quốc tế', 'THEO_YEU_CAU' => 'Theo yêu cầu'];
-                                    echo "<span class='badge bg-info text-dark'>" . ($types[$tour['loai_tour'] ?? ''] ?? 'Khác') . "</span>";
+                                    // Hiển thị tên danh mục hoặc loại tour, xử lý null an toàn
+                                    $loai = $tour['ten_danh_muc'] ?? $tour['loai_tour'] ?? 'Khác';
+                                    echo "<span class='badge bg-info text-dark'>" . htmlspecialchars($loai) . "</span>";
                                 ?>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Phân loại</small>
-                                <strong><?= $tour['loai_tour_nang_cao'] ?? 'Trọn gói' ?></strong>
+                                <strong><?= htmlspecialchars($tour['loai_tour_nang_cao'] ?? 'Trọn gói') ?></strong>
                             </div>
                         </div>
 
                         <div class="row mb-4 p-3 bg-light rounded mx-1">
                             <div class="col-md-4">
                                 <small class="text-muted d-block"><i class="fas fa-plane-departure me-1"></i> Điểm đi</small>
-                                <strong><?= $tour['dia_diem_bat_dau'] ?></strong>
+                                <strong><?= htmlspecialchars($tour['dia_diem_bat_dau'] ?? '') ?></strong>
                             </div>
                             <div class="col-md-4">
                                 <small class="text-muted d-block"><i class="fas fa-exchange-alt me-1"></i> Trung chuyển</small>
-                                <strong><?= $tour['diem_trung_chuyen'] ?? '-' ?></strong>
+                                <strong><?= htmlspecialchars($tour['diem_trung_chuyen'] ?? '-') ?></strong>
                             </div>
                             <div class="col-md-4">
                                 <small class="text-muted d-block"><i class="fas fa-map-marker-alt me-1"></i> Điểm đến</small>
-                                <strong><?= $tour['dia_diem_ket_thuc'] ?></strong>
+                                <strong><?= htmlspecialchars($tour['dia_diem_ket_thuc'] ?? '') ?></strong>
                             </div>
                         </div>
                         
@@ -94,17 +95,17 @@
                                         <?php foreach ($list_lich_trinh as $lt): ?>
                                         <tr>
                                             <td class="fw-bold text-primary">
-                                                Ngày <?= $lt['ngay_thu'] ?? $lt['thu_tu_ngay'] ?><br>
+                                                Ngày <?= htmlspecialchars($lt['ngay_thu'] ?? $lt['thu_tu_ngay'] ?? '') ?><br>
                                                 <small class="text-muted fw-normal">
-                                                    <?= isset($lt['gio_bat_dau']) ? date('H:i', strtotime($lt['gio_bat_dau'])) : '' ?> - 
-                                                    <?= isset($lt['gio_ket_thuc']) ? date('H:i', strtotime($lt['gio_ket_thuc'])) : '' ?>
+                                                    <?= !empty($lt['gio_bat_dau']) ? date('H:i', strtotime($lt['gio_bat_dau'])) : '' ?> 
+                                                    <?= !empty($lt['gio_ket_thuc']) ? '- ' . date('H:i', strtotime($lt['gio_ket_thuc'])) : '' ?>
                                                 </small>
                                             </td>
                                             <td>
-                                                <strong><?= $lt['tieu_de'] ?></strong><br>
-                                                <small class="text-muted"><i class="fas fa-map-pin me-1"></i><?= $lt['dia_diem'] ?? '' ?></small>
+                                                <strong><?= htmlspecialchars($lt['tieu_de'] ?? '') ?></strong><br>
+                                                <small class="text-muted"><i class="fas fa-map-pin me-1"></i><?= htmlspecialchars($lt['dia_diem'] ?? '') ?></small>
                                             </td>
-                                            <td><?= nl2br($lt['noi_dung'] ?? $lt['hoat_dong'] ?? '') ?></td>
+                                            <td><?= nl2br(htmlspecialchars($lt['noi_dung'] ?? $lt['hoat_dong'] ?? '')) ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
@@ -138,6 +139,7 @@
                         <?php endif; ?>
                     </div>
                 </div>
+
             </div>
 
             <div class="col-lg-4">
@@ -145,7 +147,7 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-0 position-relative">
                         <?php if (!empty($tour['anh_minh_hoa'])): ?>
-                            <img src="<?= BASE_URL . $tour['anh_minh_hoa'] ?>" class="img-fluid rounded-top w-100" style="height: 250px; object-fit: cover;">
+                            <img src="<?= BASE_URL ?>uploads/tours/<?= $tour['anh_minh_hoa'] ?>" class="img-fluid rounded-top w-100" style="height: 250px; object-fit: cover;">
                         <?php else: ?>
                             <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center rounded-top" style="height: 200px;">
                                 <span class="text-muted"><i class="fas fa-image fa-3x"></i></span>
@@ -227,9 +229,13 @@
                                     <?php endif; ?>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-0 fw-bold text-primary"><?= htmlspecialchars($hdv['ho_ten']) ?></h6>
-                                    <small class="text-muted d-block"><i class="fas fa-phone-alt me-1"></i> <?= htmlspecialchars($hdv['so_dien_thoai']) ?></small>
-                                    <small class="text-muted d-block"><i class="fas fa-language me-1"></i> <?= htmlspecialchars($hdv['ngon_ngu']) ?></small>
+                                    <h6 class="mb-0 fw-bold text-primary"><?= htmlspecialchars($hdv['ho_ten'] ?? 'Chưa cập nhật') ?></h6>
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-phone-alt me-1"></i> <?= htmlspecialchars($hdv['so_dien_thoai'] ?? '---') ?>
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-language me-1"></i> <?= htmlspecialchars($hdv['ngon_ngu'] ?? 'Chưa có ngôn ngữ') ?>
+                                    </small>
                                 </div>
                             </div>
                         <?php else: ?>

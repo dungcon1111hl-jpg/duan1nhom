@@ -1,11 +1,21 @@
 <?php
-// Nạp model User (đã được require ở index.php, nhưng require lại cho chắc chắn nếu chạy độc lập)
+// Nạp model User
 if (!class_exists('User')) require_once 'models/User.php';
 
 class UserController {
     private $model;
 
     public function __construct() {
+        // [BẢO MẬT] CHẶN NHÂN VIÊN TRUY CẬP TRÁI PHÉP
+        // Nếu chưa đăng nhập HOẶC vai trò không phải 'admin' -> Đá về trang chủ
+        if (!isset($_SESSION['user_admin']) || $_SESSION['user_admin']['role'] !== 'admin') {
+            echo "<script>
+                    alert('CẢNH BÁO: Bạn không có quyền truy cập chức năng này!'); 
+                    window.location.href='index.php?act=admin';
+                  </script>";
+            exit;
+        }
+
         $this->model = new User();
     }
 
@@ -19,16 +29,20 @@ class UserController {
     }
 
     public function store() {
-        // Validate cơ bản (bạn có thể thêm check trùng username/email ở đây)
         $this->model->insert($_POST);
         header("Location: index.php?act=user-list");
         exit;
     }
 
     public function edit() {
-        $id = $_GET['id'];
+        $id = $_GET['id'] ?? 0;
         $user = $this->model->getOne($id);
-        if (!$user) die("Người dùng không tồn tại");
+        
+        if (!$user) {
+            echo "<script>alert('User không tồn tại!'); location.href='index.php?act=user-list';</script>";
+            exit;
+        }
+        
         require ROOT . "/views/admin/users/edit.php";
     }
 
@@ -39,9 +53,25 @@ class UserController {
         exit;
     }
 
+    // Chức năng KHÓA / MỞ KHÓA tài khoản
+    public function toggleStatus() {
+        $id = $_GET['id'];
+        $currentStatus = $_GET['status']; 
+        
+        if ($id == $_SESSION['user_admin']['id']) {
+            echo "<script>alert('Không thể tự khóa tài khoản chính mình!'); window.history.back();</script>";
+            return;
+        }
+
+        $newStatus = ($currentStatus == 1) ? 0 : 1;
+        $this->model->updateStatus($id, $newStatus);
+        
+        header("Location: index.php?act=user-list");
+        exit;
+    }
+
     public function delete() {
         $id = $_GET['id'];
-        // Không cho xóa chính mình
         if ($id == $_SESSION['user_admin']['id']) {
             echo "<script>alert('Không thể xóa tài khoản đang đăng nhập!'); window.location.href='index.php?act=user-list';</script>";
             exit;

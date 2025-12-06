@@ -6,72 +6,68 @@ class User {
         $this->conn = connectDB();
     }
 
-    // 1. Đăng nhập (Dùng mật khẩu thường)
+    // 1. Kiểm tra đăng nhập
     public function checkLogin($username, $password) {
-        try {
-            $sql = "SELECT * FROM users WHERE username = :username OR email = :email";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute(['username' => $username, 'email' => $username]);
-            $user = $stmt->fetch();
+        $sql = "SELECT * FROM users WHERE username = :username OR email = :email";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':username' => $username, ':email' => $username]);
+        $user = $stmt->fetch();
 
-            // [SỬA] So sánh trực tiếp, không dùng password_verify
-            if ($user && $user['password_hash'] === $password) {
-                return $user;
+        // So sánh mật khẩu trực tiếp (không mã hóa)
+        if ($user && $user['password_hash'] === $password) {
+            if ($user['trang_thai'] == 0) {
+                return "LOCKED"; // Tài khoản bị khóa
             }
-            
-            return false;
-        } catch (PDOException $e) {
-            return false;
+            return $user;
         }
+        return false;
     }
 
-    // 2. Lấy danh sách
+    // 2. Lấy danh sách tất cả user
     public function getAll() {
-        $stmt = $this->conn->prepare("SELECT * FROM users ORDER BY id DESC");
+        $sql = "SELECT * FROM users ORDER BY id DESC";
+        $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 3. Lấy 1 người dùng
+    // 3. Lấy thông tin 1 user
     public function getOne($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = :id");
+        $sql = "SELECT * FROM users WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 4. Thêm mới (Lưu mật khẩu thường)
+    // 4. Thêm mới user
     public function insert($data) {
-        // [SỬA] Không dùng password_hash nữa
-        $password = $data['password']; 
-
         $sql = "INSERT INTO users (username, password_hash, full_name, email, so_dien_thoai, role, trang_thai) 
                 VALUES (:user, :pass, :name, :email, :sdt, :role, 1)";
         
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([
             ':user'  => $data['username'],
-            ':pass'  => $password, // Lưu trực tiếp
+            ':pass'  => $data['password'], // Lưu password thường
             ':name'  => $data['full_name'],
             ':email' => $data['email'],
-            ':sdt'   => $data['so_dien_thoai'] ?? null,
+            ':sdt'   => $data['so_dien_thoai'] ?? '',
             ':role'  => $data['role']
         ]);
     }
 
-    // 5. Cập nhật (Lưu mật khẩu thường)
+    // 5. Cập nhật user
     public function update($id, $data) {
         if (!empty($data['password'])) {
-            // [SỬA] Không mã hóa mật khẩu mới
-            $password = $data['password'];
-            
+            // Nếu có đổi mật khẩu
             $sql = "UPDATE users SET full_name=:name, email=:email, so_dien_thoai=:sdt, role=:role, password_hash=:pass WHERE id=:id";
             $params = [
                 ':name' => $data['full_name'], ':email' => $data['email'], 
                 ':sdt' => $data['so_dien_thoai'], ':role' => $data['role'], 
-                ':pass' => $password, // Lưu trực tiếp
+                ':pass' => $data['password'],
                 ':id' => $id
             ];
         } else {
+            // Giữ nguyên mật khẩu cũ
             $sql = "UPDATE users SET full_name=:name, email=:email, so_dien_thoai=:sdt, role=:role WHERE id=:id";
             $params = [
                 ':name' => $data['full_name'], ':email' => $data['email'], 
@@ -84,6 +80,7 @@ class User {
         return $stmt->execute($params);
     }
 
+    // 6. Xóa user
     public function delete($id) {
         $stmt = $this->conn->prepare("DELETE FROM users WHERE id = :id");
         return $stmt->execute([':id' => $id]);

@@ -7,18 +7,19 @@
                 <div class="card-header bg-warning text-white fw-bold py-3">
                     <i class="fas fa-user-edit me-2"></i> Cập nhật Tài khoản
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form action="index.php?act=user-update" method="POST">
                         <input type="hidden" name="id" value="<?= $user['id'] ?>">
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Tên đăng nhập</label>
                             <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($user['username']) ?>" readonly>
+                            <small class="text-muted">Không thể thay đổi tên đăng nhập.</small>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Mật khẩu mới (Để trống nếu không đổi)</label>
-                            <input type="password" name="password" class="form-control" placeholder="******">
+                            <label class="form-label fw-bold">Mật khẩu mới</label>
+                            <input type="password" name="password" class="form-control" placeholder="Để trống nếu không muốn đổi">
                         </div>
 
                         <div class="mb-3">
@@ -37,7 +38,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label class="form-label fw-bold">Phân quyền</label>
                             <select name="role" class="form-select">
                                 <option value="staff" <?= $user['role'] == 'staff' ? 'selected' : '' ?>>Nhân viên</option>
@@ -46,9 +47,9 @@
                             </select>
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-warning fw-bold text-white">Cập nhật</button>
+                        <div class="d-flex justify-content-end gap-2">
                             <a href="index.php?act=user-list" class="btn btn-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-warning fw-bold px-4 text-white">Lưu Thay Đổi</button>
                         </div>
                     </form>
                 </div>
